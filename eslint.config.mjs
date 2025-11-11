@@ -15,6 +15,8 @@ const eslintConfig = defineConfig([
     // Test config files:
     "jest.config.cjs",
     "jest.setup.js",
+    // Next.js config (using CommonJS):
+    "next.config.js",
   ]),
 ]);
 

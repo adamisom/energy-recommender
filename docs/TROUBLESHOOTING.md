@@ -116,9 +116,11 @@ Auth is **optional** for MVP. The app works perfectly without it:
 2. Use app anonymously
 3. Test all core features (usage → preferences → recommendations)
 
-### Option 3: Convert next.config.ts to next.config.js
+### Option 3: Convert next.config.ts to next.config.js ✅ **WORKS!**
 
-Next.js may have better env var support with `.js` config:
+**STATUS: ✅ CONFIRMED FIX** - This solution successfully resolves the env var loading issue.
+
+Next.js has better env var support with `.js` config:
 
 ```bash
 # Backup current config
@@ -145,6 +147,15 @@ Then:
 rm -rf .next
 npm run dev
 ```
+
+**Build Output Confirms Success:**
+```
+🔍 Supabase URL: SET ✓
+🔍 Supabase Anon Key: SET ✓
+✅ Supabase client created successfully
+```
+
+**Note:** You'll need to add `next.config.js` to `.eslintrc` ignores to avoid linting errors with `require()`.
 
 ### Option 4: Use Environment Variables at Runtime (Advanced)
 
@@ -221,9 +232,10 @@ If empty, vars aren't being injected.
 
 ### Issue: "Authentication not configured" despite correct .env.local
 
-**Status:** OPEN  
+**Status:** ✅ RESOLVED  
 **Affects:** Next.js 16.0.1 with TypeScript config  
-**Workaround:** Use Option 2 (skip auth) or Option 3 (convert to .js)  
+**Solution:** Convert `next.config.ts` to `next.config.js` (Option 3) - confirmed working  
+**Alternative:** Use Option 2 (skip auth for MVP)  
 
 ### Issue: Claude API 404 - Model not found
 
