@@ -1,10 +1,53 @@
 # Project Status - Energy Plan Recommender
 
-## Current State: ✅ IMPLEMENTATION COMPLETE
+## Current State: ✅ IMPLEMENTATION COMPLETE + ENHANCEMENTS
 
 **Date:** November 11, 2025  
-**Version:** 1.0.0  
-**Status:** Fully Implemented, Tested, and Production-Ready
+**Version:** 1.0.1  
+**Status:** Fully Implemented, Enhanced, Tested, and Production-Ready
+
+---
+
+## 🆕 Recent Enhancements (Nov 11, 2025)
+
+### Today's Updates (Version 1.0.1)
+
+1. **✅ ETF Risk Scoring** - Enhanced flexibility calculation
+   - Plans with high early termination fees now penalized
+   - ETF penalty tiers: $0 (0pts) → $250+ (30pts)
+   - Added 5 new tests for ETF scenarios
+   - Tests: 44 → 49 passing
+
+2. **✅ Usage Data Persistence** - User-controlled data loading
+   - Auto-fetch saved usage for logged-in users
+   - Blue notification card with saved data preview
+   - "Download My Usage CSV" button
+   - "Pre-fill Form" button
+   - Auto-save on continue
+
+3. **✅ Claude Model Update** - Fixed API compatibility
+   - Updated from `claude-3-5-sonnet-20240620` to `claude-sonnet-4-5-20250929`
+   - Resolves 404 "model not found" errors
+
+4. **✅ Sample CSV** - Realistic test data
+   - Created `public/example-usage.csv` with Texas usage patterns
+   - 13,830 kWh annual (high summer peaks)
+   - Download link added to usage page
+
+5. **✅ Documentation** - Comprehensive guides
+   - Created `docs/FUTURE_WORK.md` (23 post-MVP items)
+   - Created `docs/TROUBLESHOOTING.md` (auth env var bug)
+   - Updated MANUAL_TESTING_GUIDE.md references
+
+6. **✅ Bug Fixes**
+   - Fixed infinite loop in recommendations page (useCallback)
+   - Fixed hydration warning in user-menu.tsx
+
+**Net Changes:**
+- +5 tests (49 total)
+- +2 documentation files
+- +200 lines of production code
+- 0 errors, all tests passing
 
 ---
 
@@ -27,7 +70,7 @@ Status: PASSING ✅
 
 # Test Check
 npm test
-✅ 44 tests passing
+✅ 49 tests passing
 ✅ 6 test suites passing
 ✅ 0 failures
 Status: PASSING ✅
@@ -235,8 +278,8 @@ energy-recommender/
 |---------|--------|-------|
 | Usage pattern detection | ✅ Tested | Summer/winter/flat/variable |
 | Cost calculation | ✅ Tested | Fixed/variable/TOU rates |
-| Plan scoring | ✅ Tested | 5-dimension algorithm |
-| AI explanations | ✅ Implemented | Claude 3.5 with caching |
+| Plan scoring | ✅ Enhanced | 5-dimension + ETF risk |
+| AI explanations | ✅ Implemented | Claude Sonnet 4.5 with caching |
 | Rate limiting | ✅ Tested | 10 req/min with tests |
 | Database queries | ✅ Optimized | Indexed, efficient |
 | Error handling | ✅ Robust | Zod validation, fallbacks |
@@ -246,7 +289,7 @@ energy-recommender/
 | Feature | Status | Notes |
 |---------|--------|-------|
 | Landing page | ✅ Complete | Hero, features, CTA |
-| Usage input | ✅ Complete | Manual + CSV upload |
+| Usage input | ✅ Enhanced | Manual + CSV + saved data UI |
 | Preferences | ✅ Complete | State, priority, filters |
 | Recommendations | ✅ Complete | Top 3 with AI insights |
 | Plan details | ✅ Complete | Full plan information |
@@ -266,7 +309,7 @@ energy-recommender/
 | Auth context | ✅ Complete | React context |
 | Hybrid storage | ✅ Complete | DB for logged in, sessionStorage for anonymous |
 | Auto-clear storage | ✅ Complete | On login/logout |
-| Save usage data | ✅ Complete | API route |
+| Save usage data | ✅ Enhanced | API route + UI with download/pre-fill |
 | Save recommendations | ✅ Complete | History tracking |
 
 ---
@@ -332,22 +375,27 @@ PASS __tests__/scoring/cost-calculator.test.ts (6 tests)
   ✓ Month-to-month handling
   ✓ Savings calculation
 
-PASS __tests__/scoring/plan-scorer.test.ts (7 tests)
+PASS __tests__/scoring/plan-scorer.test.ts (9 tests)
   ✓ Cost priority weighting
   ✓ Renewable priority weighting
   ✓ Flexibility scoring
+  ✓ ETF penalty in flexibility score (NEW)
+  ✓ Very high ETF significant penalty (NEW)
   ✓ Cost normalization
   ✓ Edge case: all plans same cost
   ✓ Renewable percentage scoring
   ✓ Supplier rating normalization
 
-PASS __tests__/scoring/plan-ranker.test.ts (7 tests)
+PASS __tests__/scoring/plan-ranker.test.ts (10 tests)
   ✓ Top 3 ranking by score
   ✓ Filter by renewable percentage
   ✓ Filter by contract length
   ✓ Filter by supplier rating
   ✓ Constraint relaxation
   ✓ Month-to-month contract handling
+  ✓ Favor low ETF plans for flexibility (NEW)
+  ✓ Penalize high ETF for flexibility users (NEW)
+  ✓ Include ETF in switching costs (NEW)
 
 PASS __tests__/utils/rate-limit.test.ts (7 tests)
   ✓ Allow first request
@@ -370,7 +418,7 @@ PASS __tests__/utils/storage.test.ts (10 tests)
   ✓ Storage keys constants
 ```
 
-**Total:** 44/44 tests passing (100%)
+**Total:** 49/49 tests passing (100%)
 
 ---
 

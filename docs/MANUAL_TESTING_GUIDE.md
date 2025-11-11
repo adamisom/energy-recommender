@@ -311,7 +311,7 @@ npm run dev
 - [ ] Get recommendations
 - [ ] Close browser completely
 - [ ] Reopen and sign in
-- [ ] TODO: Data should load from database (currently manual test)
+- [ ] Data will NOT auto-load (see docs/FUTURE_WORK.md #1 - usage data persistence)
 
 #### Test 5.5: Sign Out Flow
 - [ ] While signed in, click "Sign Out"
@@ -365,7 +365,8 @@ npm run dev
 7. [ ] Verify recommendations saved (check `/api/user/recommendations`)
 8. [ ] Sign out
 9. [ ] Sign back in
-10. [ ] TODO: Verify data loads (manual DB check for now)
+10. [ ] To verify recommendation history was saved, check: `/api/user/recommendations` (GET)
+    - Note: Usage data won't auto-load (see docs/FUTURE_WORK.md #1)
 
 #### Test 6.3: Browser Back/Forward
 - [ ] Navigate through: landing → usage → preferences → recommendations

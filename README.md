@@ -66,6 +66,7 @@ npm run build
 Comprehensive documentation in `/docs/`:
 - **`DEVELOPER_SETUP.md`** - Complete setup guide with Supabase & API credentials
 - **`MANUAL_TESTING_GUIDE.md`** - Smoke tests and feature testing
+- **`FUTURE_WORK.md`** - Post-MVP enhancements & known limitations (23 items)
 - `Implementation_PRD.md` - Complete implementation guide (3,333 lines)
 - `Architecture.md` - System architecture & data flows
 - `Implementation_Tasks.md` - Step-by-step tasks
@@ -131,7 +132,7 @@ MIT
 
 ## 🤝 Contributing
 
-This is an MVP implementation. See `docs/Implementation_PRD.md` for future enhancements.
+This is an MVP implementation. See `docs/FUTURE_WORK.md` for 23 post-MVP enhancements and known limitations.
 
 ---
 
