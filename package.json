@@ -6,7 +6,9 @@
     "dev": "next dev --webpack",
     "build": "next build --webpack",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test": "echo \"No tests yet. Run 'npm install -D jest @testing-library/react' to set up testing.\" && exit 0",
+    "type-check": "tsc --noEmit"
   },
   "dependencies": {
     "react": "19.2.0",
