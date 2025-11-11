@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,11 +9,39 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { safeSetItem, STORAGE_KEYS } from '@/lib/utils/storage';
 import { MONTH_NAMES, VALIDATION_LIMITS } from '@/lib/constants';
+import { useAuth } from '@/lib/auth/context';
 
 export default function UsagePage() {
   const router = useRouter();
+  const { user } = useAuth();
   const [usageData, setUsageData] = useState<(number | string)[]>(Array(12).fill(''));
   const [errors, setErrors] = useState<string[]>([]);
+  const [savedUsageData, setSavedUsageData] = useState<number[] | null>(null);
+  const [loadingSaved, setLoadingSaved] = useState(false);
+
+  // Fetch saved usage data if user is logged in
+  useEffect(() => {
+    async function fetchSavedUsage() {
+      if (!user) return;
+      
+      setLoadingSaved(true);
+      try {
+        const response = await fetch('/api/user/usage');
+        if (response.ok) {
+          const { data } = await response.json();
+          if (data && data.monthlyKwh) {
+            setSavedUsageData(data.monthlyKwh as number[]);
+          }
+        }
+      } catch (error) {
+        console.error('Failed to fetch saved usage:', error);
+      } finally {
+        setLoadingSaved(false);
+      }
+    }
+
+    fetchSavedUsage();
+  }, [user]);
 
   const handleManualChange = (index: number, value: string) => {
     const newData = [...usageData];
@@ -51,7 +79,34 @@ export default function UsagePage() {
     reader.readAsText(file);
   };
 
-  const validateAndContinue = () => {
+  const handleDownloadSavedUsage = () => {
+    if (!savedUsageData) return;
+
+    // Create CSV content
+    const csvContent = [
+      'Month,kWh',
+      ...savedUsageData.map((kwh, idx) => `${MONTH_NAMES[idx]},${kwh}`)
+    ].join('\n');
+
+    // Create blob and download
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'my-usage-data.csv';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+  };
+
+  const handlePrefillFromSaved = () => {
+    if (!savedUsageData) return;
+    setUsageData(savedUsageData);
+    setErrors([]);
+  };
+
+  const validateAndContinue = async () => {
     const newErrors: string[] = [];
 
     // Check all fields are filled
@@ -80,6 +135,23 @@ export default function UsagePage() {
       setErrors(['Failed to save data. Please ensure your browser allows sessionStorage.']);
       return;
     }
+
+    // Save to database if user is logged in
+    if (user) {
+      try {
+        await fetch('/api/user/usage', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            monthlyKwh: usageData.map(v => Number(v))
+          }),
+        });
+      } catch (error) {
+        console.error('Failed to save usage to database:', error);
+        // Don't block navigation if DB save fails
+      }
+    }
+
     router.push('/preferences');
   };
 
@@ -94,6 +166,38 @@ export default function UsagePage() {
             We need 12 months of electricity usage to find you the best plans
           </p>
         </div>
+
+        {/* Saved Usage Data Card - Show if user has saved data */}
+        {savedUsageData && !loadingSaved && (
+          <Card className="mb-6 border-blue-200 bg-blue-50">
+            <CardHeader>
+              <CardTitle className="text-blue-900">Previously Saved Usage Data Found</CardTitle>
+              <CardDescription className="text-blue-700">
+                We found your usage data from a previous session. You can download it or use it to pre-fill the form.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-wrap gap-3">
+                <Button 
+                  onClick={handleDownloadSavedUsage}
+                  variant="outline"
+                  className="border-blue-300 hover:bg-blue-100"
+                >
+                  📥 Download My Usage CSV
+                </Button>
+                <Button 
+                  onClick={handlePrefillFromSaved}
+                  className="bg-blue-600 hover:bg-blue-700"
+                >
+                  ✨ Pre-fill Form with Saved Data
+                </Button>
+              </div>
+              <div className="mt-3 text-sm text-blue-700">
+                <strong>Preview:</strong> {savedUsageData.slice(0, 3).join(', ')}... kWh (12 months)
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         <Card>
           <CardHeader>
