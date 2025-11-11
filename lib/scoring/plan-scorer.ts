@@ -65,22 +65,43 @@ function calculateCostScore(cost: CostBreakdown, allCosts: CostBreakdown[]): num
 }
 
 /**
- * Calculate flexibility score based on contract length (0-100)
+ * Calculate flexibility score based on contract length and ETF risk (0-100)
  */
 function calculateFlexibilityScore(plan: Plan): number {
+  // Base score from contract length
+  let contractScore = 0;
+  
   if (plan.contractLengthMonths === null) {
-    return 100; // Month-to-month is most flexible
+    contractScore = 100; // Month-to-month is most flexible
+  } else if (plan.contractLengthMonths <= 6) {
+    contractScore = 70;
+  } else if (plan.contractLengthMonths <= 12) {
+    contractScore = 50;
+  } else if (plan.contractLengthMonths <= 24) {
+    contractScore = 30;
+  } else {
+    contractScore = 10;
   }
 
-  if (plan.contractLengthMonths <= 6) {
-    return 70;
-  } else if (plan.contractLengthMonths <= 12) {
-    return 50;
-  } else if (plan.contractLengthMonths <= 24) {
-    return 30;
+  // ETF penalty (reduces flexibility score)
+  let etfPenalty = 0;
+  
+  if (plan.earlyTerminationFee === 0) {
+    etfPenalty = 0; // No ETF = no penalty
+  } else if (plan.earlyTerminationFee <= 100) {
+    etfPenalty = 10; // Low ETF = small penalty
+  } else if (plan.earlyTerminationFee <= 150) {
+    etfPenalty = 15; // Medium ETF = medium penalty
+  } else if (plan.earlyTerminationFee <= 200) {
+    etfPenalty = 20; // High ETF = larger penalty
   } else {
-    return 10;
+    etfPenalty = 30; // Very high ETF = significant penalty
   }
+
+  // Apply penalty (but don't go below 0)
+  const finalScore = Math.max(0, contractScore - etfPenalty);
+  
+  return finalScore;
 }
 
 /**

@@ -166,5 +166,108 @@ describe('filterAndRankPlans', () => {
     // Month-to-month should always pass contract filter
     expect(result).toHaveLength(1);
   });
+
+  test('should favor plans with lower ETFs for flexibility priority', () => {
+    // Plans with same contract length but different ETFs
+    const scoredPlans = [
+      createMockScoredPlan({ 
+        contractLengthMonths: 12, 
+        earlyTerminationFee: 0,
+        supplierRating: 4.0 
+      }, 85), // No ETF
+      createMockScoredPlan({ 
+        contractLengthMonths: 12, 
+        earlyTerminationFee: 150,
+        supplierRating: 4.0 
+      }, 70), // Medium ETF - lower score due to ETF penalty
+      createMockScoredPlan({ 
+        contractLengthMonths: 12, 
+        earlyTerminationFee: 250,
+        supplierRating: 4.0 
+      }, 55), // High ETF - even lower score
+    ];
+
+    const preferences: UserPreferences = {
+      priority: 'flexibility',
+      minRenewablePct: 0,
+      maxContractMonths: 24,
+      minSupplierRating: 3.0,
+    };
+
+    const result = filterAndRankPlans(scoredPlans, preferences);
+
+    expect(result).toHaveLength(3);
+    // Plan with no ETF should rank highest
+    expect(result[0].plan.earlyTerminationFee).toBe(0);
+    expect(result[0].score.finalScore).toBe(85);
+    // Plans with higher ETFs should rank lower
+    expect(result[1].plan.earlyTerminationFee).toBe(150);
+    expect(result[2].plan.earlyTerminationFee).toBe(250);
+  });
+
+  test('should penalize high ETF plans when user values flexibility', () => {
+    const lowEtfPlan = createMockScoredPlan({ 
+      contractLengthMonths: 12, 
+      earlyTerminationFee: 50,
+      ratePerKwh: 0.11,
+      supplierRating: 4.0 
+    }, 80);
+    
+    const highEtfPlan = createMockScoredPlan({ 
+      contractLengthMonths: 12, 
+      earlyTerminationFee: 300,
+      ratePerKwh: 0.09, // Cheaper rate
+      supplierRating: 4.0 
+    }, 65); // Lower score due to high ETF
+
+    const preferences: UserPreferences = {
+      priority: 'flexibility',
+      minRenewablePct: 0,
+      maxContractMonths: 24,
+      minSupplierRating: 3.0,
+    };
+
+    const result = filterAndRankPlans([lowEtfPlan, highEtfPlan], preferences);
+
+    expect(result).toHaveLength(2);
+    // Despite cheaper rate, high ETF plan should rank lower for flexibility users
+    expect(result[0].plan.earlyTerminationFee).toBe(50);
+    expect(result[1].plan.earlyTerminationFee).toBe(300);
+  });
+
+  test('should include ETF in cost when switching from current plan early', () => {
+    // Create plans where the cost breakdown includes switching costs
+    const plan1 = createMockScoredPlan({ 
+      contractLengthMonths: 12, 
+      earlyTerminationFee: 150,
+      supplierRating: 4.0 
+    }, 85);
+    
+    // Simulate switching cost from current plan in the cost breakdown
+    plan1.cost.switchingCost = 150; // User's current plan ETF
+    plan1.cost.firstYearTotal = 1470; // 1320 + 150
+
+    const plan2 = createMockScoredPlan({ 
+      contractLengthMonths: 12, 
+      earlyTerminationFee: 100,
+      supplierRating: 4.0 
+    }, 88);
+    plan2.cost.switchingCost = 150;
+    plan2.cost.firstYearTotal = 1470; // Same total cost
+
+    const preferences: UserPreferences = {
+      priority: 'cost',
+      minRenewablePct: 0,
+      maxContractMonths: 24,
+      minSupplierRating: 3.0,
+    };
+
+    const result = filterAndRankPlans([plan1, plan2], preferences);
+
+    expect(result).toHaveLength(2);
+    // Both plans should include the switching cost in their total
+    expect(result[0].cost.switchingCost).toBe(150);
+    expect(result[1].cost.switchingCost).toBe(150);
+  });
 });
 

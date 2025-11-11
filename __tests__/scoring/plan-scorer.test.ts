@@ -67,7 +67,7 @@ describe('scorePlan', () => {
   });
 
   test('should score flexibility based on contract length', () => {
-    const monthToMonthPlan: Plan = { ...mockPlan, contractLengthMonths: null };
+    const monthToMonthPlan: Plan = { ...mockPlan, contractLengthMonths: null, earlyTerminationFee: 0 };
     const score = scorePlan(monthToMonthPlan, mockCost, allCosts, { 
       priority: 'flexibility',
       minRenewablePct: 0,
@@ -75,8 +75,49 @@ describe('scorePlan', () => {
       minSupplierRating: 3.0,
     }, 'flat');
 
-    // Month-to-month should get perfect flexibility score
+    // Month-to-month with no ETF should get perfect flexibility score
     expect(score.flexibilityScore).toBe(100);
+  });
+
+  test('should penalize high ETFs in flexibility score', () => {
+    // 12-month contract with no ETF
+    const noEtfPlan: Plan = { ...mockPlan, contractLengthMonths: 12, earlyTerminationFee: 0 };
+    const scoreNoEtf = scorePlan(noEtfPlan, mockCost, allCosts, { 
+      priority: 'flexibility',
+      minRenewablePct: 0,
+      maxContractMonths: 24,
+      minSupplierRating: 3.0,
+    }, 'flat');
+
+    // 12-month contract with $150 ETF
+    const highEtfPlan: Plan = { ...mockPlan, contractLengthMonths: 12, earlyTerminationFee: 150 };
+    const scoreHighEtf = scorePlan(highEtfPlan, mockCost, allCosts, { 
+      priority: 'flexibility',
+      minRenewablePct: 0,
+      maxContractMonths: 24,
+      minSupplierRating: 3.0,
+    }, 'flat');
+
+    // Plan with no ETF should score higher than plan with ETF
+    expect(scoreNoEtf.flexibilityScore).toBeGreaterThan(scoreHighEtf.flexibilityScore);
+    
+    // 12-month contract base score is 50
+    expect(scoreNoEtf.flexibilityScore).toBe(50); // 50 - 0 penalty
+    expect(scoreHighEtf.flexibilityScore).toBe(35); // 50 - 15 penalty (ETF $150)
+  });
+
+  test('should penalize very high ETFs significantly', () => {
+    // 12-month contract with $250 ETF (very high)
+    const veryHighEtfPlan: Plan = { ...mockPlan, contractLengthMonths: 12, earlyTerminationFee: 250 };
+    const score = scorePlan(veryHighEtfPlan, mockCost, allCosts, { 
+      priority: 'flexibility',
+      minRenewablePct: 0,
+      maxContractMonths: 24,
+      minSupplierRating: 3.0,
+    }, 'flat');
+
+    // 12-month base score (50) - 30 point penalty for ETF > $200
+    expect(score.flexibilityScore).toBe(20);
   });
 
   test('should normalize cost score correctly', () => {
