@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/lib/auth/context';
 import { AuthModal } from './auth-modal';
@@ -9,6 +9,16 @@ import { safeClear } from '@/lib/utils/storage';
 export function UserMenu() {
   const { user, loading, signOut } = useAuth();
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  // Prevent hydration mismatch by only rendering after mount
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) {
+    return <div className="h-9 w-20" />;
+  }
 
   const handleSignOut = async () => {
     // Clear sessionStorage on logout

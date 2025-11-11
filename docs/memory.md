@@ -6,6 +6,7 @@ Implementation is theoretically complete but totally untested, so skim docs/misc
 
 ## Workflow Guidance
 
+NEVER put contents of .env* files in the chat, you can read the file but only suggest changes indirectly
 Right after you're done making file changes, I want you to run lint (`npm run lint` in root) and fix lint issues in the source code (but not in the markdown files), and then after that run build (`npm run build` in root) and fix any issues, and then after that, fix any `npm run test` issues
 After each phase of work is completed, update docs/misc/PROJECT_STATUS and prompt me to update this doc (do not update memory.md yourself)
 Don't create a Markdown doc without asking me first — and default to just telling me in the chat the same information you were creating a file for, but also advise if the info is worth saving.
