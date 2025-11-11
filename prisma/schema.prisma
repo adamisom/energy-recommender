@@ -1,0 +1,72 @@
+// This is your Prisma schema file
+// Energy Plan Recommender
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Plan {
+  id                   String   @id @default(cuid())
+  planId               String   @unique
+  state                String
+  supplierName         String
+  planName             String
+  rateType             String   // 'fixed', 'variable', 'tou'
+  ratePerKwh           Float
+  onPeakRate           Float?   // For TOU plans
+  offPeakRate          Float?   // For TOU plans
+  monthlyFee           Float    @default(0)
+  contractLengthMonths Int?     // null for month-to-month
+  earlyTerminationFee  Float    @default(0)
+  renewablePct         Int      // 0-100
+  supplierRating       Float    // 1.0-5.0
+  planDetails          Json?
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  @@index([state])
+  @@index([renewablePct])
+  @@index([ratePerKwh])
+  @@index([supplierName])
+}
+
+model User {
+  id                    String                 @id @default(cuid())
+  email                 String                 @unique
+  password              String                 // Hashed
+  name                  String?
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
+  savedUsageData        SavedUsageData[]
+  savedRecommendations  SavedRecommendation[]
+}
+
+model SavedUsageData {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  monthlyKwh Json     // Array of 12 numbers
+  state      String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([userId])
+}
+
+model SavedRecommendation {
+  id              String   @id @default(cuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  recommendations Json     // Full recommendation response
+  monthlyUsageKwh Json     // Array of 12 numbers for reference
+  preferences     Json     // User preferences used
+  state           String
+  createdAt       DateTime @default(now())
+
+  @@index([userId, createdAt])
+}

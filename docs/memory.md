@@ -2,7 +2,7 @@
 
 ## Where To Pick Up
 
-Begin implementation starting with Phase 0 — you'll see from existing files and commits that 0.1 is already done, Reference docs/Implementation_Tasks.md for file-level details and Follow Implementation Notes section for gotchas, Consult docs/misc/planning-PRD_FINAL_REVIEW.md for edge cases and to ensure we resolve the ten Priority 2 items (Recommendations section on line 804) during implementation, and consult docs/Architecture.md as needed for high-level context
+Implementation is theoretically complete but totally untested, so skim docs/misc/MANUAL_TESTING_GUIDE.md and to understand what's built refer to—as needed—docs/PROJECT_STATUS.md and docs/misc/IMPLEMENTATION_COMPLETE.md
 
 ## Workflow Guidance
 
