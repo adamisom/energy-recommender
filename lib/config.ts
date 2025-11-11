@@ -1,38 +1,44 @@
 /**
  * Environment configuration
  * Centralizes all environment variable access
+ * 
+ * NOTE: NEXT_PUBLIC_* variables MUST be referenced directly (not via process.env[key])
+ * because Next.js webpack replaces them at build time using static analysis.
  */
 
-function getEnvVar(key: string, required: boolean = false): string | undefined {
-  const value = process.env[key];
-  
-  if (required && !value) {
-    throw new Error(`Missing required environment variable: ${key}`);
-  }
-  
-  return value;
-}
-
 export const config = {
-  // Anthropic API
+  // Anthropic API (server-side only)
   anthropic: {
-    apiKey: () => getEnvVar('ANTHROPIC_API_KEY', true)!,
+    apiKey: () => {
+      const value = process.env.ANTHROPIC_API_KEY;
+      if (!value) {
+        throw new Error('Missing required environment variable: ANTHROPIC_API_KEY');
+      }
+      return value;
+    },
   },
 
-  // Supabase
+  // Supabase (client-side safe)
   supabase: {
-    url: () => getEnvVar('NEXT_PUBLIC_SUPABASE_URL'),
-    anonKey: () => getEnvVar('NEXT_PUBLIC_SUPABASE_ANON_KEY'),
+    // Direct references required for webpack replacement
+    url: () => process.env.NEXT_PUBLIC_SUPABASE_URL,
+    anonKey: () => process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
   },
 
-  // Database
+  // Database (server-side only)
   database: {
-    url: () => getEnvVar('DATABASE_URL', true)!,
+    url: () => {
+      const value = process.env.DATABASE_URL;
+      if (!value) {
+        throw new Error('Missing required environment variable: DATABASE_URL');
+      }
+      return value;
+    },
   },
 
   // Feature flags
   features: {
-    seasonalScoring: () => getEnvVar('ENABLE_SEASONAL_SCORING') === 'true',
+    seasonalScoring: () => process.env.ENABLE_SEASONAL_SCORING === 'true',
   },
 
   // Runtime environment

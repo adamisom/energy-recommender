@@ -1,4 +1,9 @@
-require('dotenv').config({ path: '.env.local' });
+const { config } = require('dotenv');
+const { expand } = require('dotenv-expand');
+
+// Load .env.local first (highest priority)
+const myEnv = config({ path: '.env.local' });
+expand(myEnv);
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
