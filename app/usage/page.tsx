@@ -141,6 +141,15 @@ export default function UsagePage() {
                     <p className="text-sm text-slate-500 mt-4">
                       Upload a CSV file with 12 monthly usage values
                     </p>
+                    <p className="text-sm mt-2">
+                      <a 
+                        href="/example-usage.csv" 
+                        download 
+                        className="text-blue-600 hover:text-blue-700 hover:underline"
+                      >
+                        Download example CSV
+                      </a>
+                    </p>
                   </div>
 
                   {usageData.some(v => v !== '') && (
