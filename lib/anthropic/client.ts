@@ -28,5 +28,5 @@ export const anthropic = new Proxy({} as Anthropic, {
 });
 
 // Export model constant
-export const MODEL_NAME = 'claude-3-5-sonnet-20240620';
+export const MODEL_NAME = 'claude-sonnet-4-5-20250929';
 

@@ -37,7 +37,7 @@ export const CACHE_SETTINGS = {
 
 // AI settings
 export const AI_SETTINGS = {
-  MODEL: 'claude-3-5-sonnet-20240620',
+  MODEL: 'claude-sonnet-4-5-20250929',
   MAX_TOKENS: 300,
   TIMEOUT_MS: 10000,
   MIN_EXPLANATION_LENGTH: 50,
