@@ -13,36 +13,28 @@ AI-powered energy plan recommendations based on your usage patterns and preferen
 
 ## 📋 Quick Start
 
-### Prerequisites
-
-- Node.js 18+
-- npm or yarn
-- Supabase account (for database)
-- Anthropic API key (for AI explanations)
-
-### Installation
-
 ```bash
-# Clone repository
+# 1. Clone and install
 git clone <your-repo-url>
 cd energy-recommender
-
-# Install dependencies
 npm install
 
-# Set up environment variables
-cp .env.local.example .env.local
-# Edit .env.local with your credentials
+# 2. Set up environment variables (see docs/DEVELOPER_SETUP.md for details)
+# - Get Supabase database URL (via Connect button in Supabase dashboard)
+# - Get Anthropic API key from console.anthropic.com
+# - Add both to .env.local
 
-# Set up database
+# 3. Initialize database
 npx prisma db push
 npm run seed
 
-# Start development server
+# 4. Start development server
 npm run dev
 ```
 
 Visit http://localhost:3000 🎉
+
+> **First time setup?** See [docs/DEVELOPER_SETUP.md](docs/DEVELOPER_SETUP.md) for detailed step-by-step instructions with screenshots and troubleshooting.
 
 ## 🧪 Testing
 
@@ -72,12 +64,12 @@ npm run build
 ## 📚 Documentation
 
 Comprehensive documentation in `/docs/`:
+- **`DEVELOPER_SETUP.md`** - Complete setup guide with Supabase & API credentials
+- **`MANUAL_TESTING_GUIDE.md`** - Smoke tests and feature testing
 - `Implementation_PRD.md` - Complete implementation guide (3,333 lines)
 - `Architecture.md` - System architecture & data flows
 - `Implementation_Tasks.md` - Step-by-step tasks
 - `PROJECT_STATUS.md` - Current status & metrics
-- `IMPLEMENTATION_COMPLETE.md` - Implementation summary
-- `REFACTORING_AND_AUTH_COMPLETE.md` - Refactoring details
 
 ## 🎯 Usage Flow
 
@@ -111,23 +103,6 @@ SessionStorage automatically cleared on login/logout.
 - **5 API routes**
 - **0 lint/build/test errors**
 
-## 🔧 Environment Variables
-
-```bash
-# Required for AI explanations
-ANTHROPIC_API_KEY=sk-ant-xxxxx
-
-# Required for database
-DATABASE_URL=postgresql://...
-
-# Optional for authentication
-NEXT_PUBLIC_SUPABASE_URL=https://xxxxx.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
-
-# Optional feature flags
-ENABLE_SEASONAL_SCORING=false
-```
-
 ## 📝 Available Scripts
 
 ```bash
@@ -148,7 +123,7 @@ Ready for Vercel deployment:
 vercel --prod
 ```
 
-Configure environment variables in Vercel dashboard, then deploy.
+Set the same environment variables from `.env.local` in your Vercel project settings. See [docs/DEVELOPER_SETUP.md](docs/DEVELOPER_SETUP.md) for deployment details.
 
 ## 📄 License
 
