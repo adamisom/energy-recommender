@@ -3,7 +3,7 @@
 import { useAuth } from '@/lib/auth/context';
 import { safeGetItem, safeSetItem, STORAGE_KEYS } from '@/lib/utils/storage';
 import { UserPreferences } from '@/types';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 
 /**
  * Hybrid storage hook - uses database for logged-in users, sessionStorage for anonymous
@@ -102,7 +102,7 @@ export function usePreferences() {
 export function useSaveRecommendation() {
   const { user } = useAuth();
 
-  const saveRecommendation = async (
+  const saveRecommendation = useCallback(async (
     recommendations: unknown,
     monthlyUsageKwh: number[],
     preferences: UserPreferences,
@@ -134,7 +134,7 @@ export function useSaveRecommendation() {
       console.error('Failed to save recommendation:', error);
       return { success: false, reason: 'network_error' };
     }
-  };
+  }, [user]);
 
   return {
     saveRecommendation,
