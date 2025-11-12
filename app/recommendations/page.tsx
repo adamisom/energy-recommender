@@ -435,8 +435,8 @@ export default function RecommendationsPage() {
 
         {/* Search, Sort, and Filter Controls */}
         <Card className="mb-6">
-          <CardContent className="pt-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <CardContent className="pt-0">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
               {/* Search */}
               <div>
                 <Input
@@ -449,7 +449,7 @@ export default function RecommendationsPage() {
               </div>
               
               {/* Hide Viewed Toggle */}
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 pl-4 md:pl-0">
                 <input
                   type="checkbox"
                   id="hide-viewed"
@@ -458,22 +458,21 @@ export default function RecommendationsPage() {
                   className="w-4 h-4"
                 />
                 <label htmlFor="hide-viewed" className="text-sm text-slate-700 cursor-pointer">
-                  Hide viewed plans
+                  Hide plans you've clicked View Details on
                 </label>
-                <span className="text-xs text-slate-500">(Plans are marked as viewed when you click "View Details")</span>
               </div>
+              
+              {/* Favorites Link */}
+              {favorites.length > 0 && (
+                <div>
+                  <Link href="/recommendations/favorites">
+                    <Button variant="outline" className="w-full">
+                      ⭐ View Bookmarks
+                    </Button>
+                  </Link>
+                </div>
+              )}
             </div>
-            
-            {/* Favorites Link */}
-            {favorites.length > 0 && (
-              <div className="mt-4">
-                <Link href="/recommendations/favorites">
-                  <Button variant="outline" className="w-full md:w-auto">
-                    ⭐ View My Favorites ({favorites.length})
-                  </Button>
-                </Link>
-              </div>
-            )}
             
             {/* Compare Button */}
             {selectedForCompare.size > 0 && (
