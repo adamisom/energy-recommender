@@ -420,17 +420,15 @@ export default function RecommendationsPage() {
           >
             🗑️ Start Over
           </Button>
-          {user && (
-            <Link href="/recommendations/history">
-              <Button
-                variant="outline"
-                className="text-base py-6 font-semibold border-2 hover:bg-slate-50"
-                size="lg"
-              >
-                📜 View History
-              </Button>
-            </Link>
-          )}
+          <Link href="/recommendations/history">
+            <Button
+              variant="outline"
+              className="text-base py-6 font-semibold border-2 hover:bg-slate-50"
+              size="lg"
+            >
+              📜 View History
+            </Button>
+          </Link>
         </div>
 
         {/* Search, Sort, and Filter Controls */}

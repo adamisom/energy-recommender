@@ -51,7 +51,8 @@ export default function RecommendationsHistoryPage() {
     if (authLoading) return;
 
     if (!user) {
-      router.push('/recommendations');
+      // Don't redirect - show message that they need to register
+      setLoading(false);
       return;
     }
 
@@ -147,7 +148,17 @@ export default function RecommendationsHistoryPage() {
           </Button>
         </div>
 
-        {history.length === 0 ? (
+        {!user ? (
+          <Card className="border-slate-200 bg-white text-center p-8">
+            <CardTitle className="text-slate-800 mb-2">Sign In Required</CardTitle>
+            <p className="text-slate-600 mb-4">
+              You need to create an account to view your recommendation history. Sign up to save and track your recommendations across sessions.
+            </p>
+            <Button onClick={() => router.push('/recommendations')} className="bg-blue-600 hover:bg-blue-700">
+              Go Back
+            </Button>
+          </Card>
+        ) : history.length === 0 ? (
           <Card>
             <CardContent className="py-12 text-center">
               <p className="text-slate-600 mb-4">No recommendation history yet.</p>
