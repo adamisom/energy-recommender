@@ -44,6 +44,7 @@ model User {
   updatedAt             DateTime               @updatedAt
   savedUsageData        SavedUsageData[]
   savedRecommendations  SavedRecommendation[]
+  currentPlan           UserCurrentPlan?
 }
 
 model SavedUsageData {
@@ -99,4 +100,34 @@ model RecommendationRating {
   @@index([userId])
   @@index([sessionId])
   @@index([createdAt])
+}
+
+model UserCurrentPlan {
+  id                String   @id @default(cuid())
+  userId            String   @unique
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Plan identification
+  planId            String?  // If plan exists in our database
+  supplierName      String
+  planName          String
+  
+  // Rate details
+  ratePerKwh        Float
+  rateType          String   // 'fixed', 'variable', 'tou'
+  onPeakRate        Float?
+  offPeakRate       Float?
+  monthlyFee        Float    @default(0)
+  
+  // Contract details
+  contractStartDate DateTime
+  contractEndDate   DateTime?
+  contractLengthMonths Int?
+  earlyTerminationFee Float  @default(0)
+  
+  // Metadata
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([userId])
 }

@@ -15,9 +15,18 @@ const recommendationRequestSchema = z.object({
   state: z.enum(['TX', 'PA', 'OH', 'IL']).optional(),
   monthlyUsageKwh: z.array(z.number().positive()).length(12),
   currentPlan: z.object({
-    planId: z.string(),
-    startDate: z.string().optional(), // Made optional per PRD v3.2
+    planId: z.string().optional(),
+    supplierName: z.string().optional(),
+    planName: z.string().optional(),
+    ratePerKwh: z.number().optional(),
+    rateType: z.enum(['fixed', 'variable', 'tou']).optional(),
+    monthlyFee: z.number().optional(),
+    contractStartDate: z.string().optional(),
     contractEndDate: z.string().optional(),
+    contractLengthMonths: z.number().optional(),
+    earlyTerminationFee: z.number().optional(),
+    onPeakRate: z.number().optional(),
+    offPeakRate: z.number().optional(),
   }).optional(),
   preferences: z.object({
     priority: z.enum(['cost', 'renewable', 'flexibility', 'balanced']),
@@ -76,13 +85,41 @@ export async function POST(request: NextRequest) {
     let currentPlanEarlyTerminationFee = 0;
 
     if (validatedData.currentPlan) {
-      const currentPlan = allPlans.find(
-        p => p.planId === validatedData.currentPlan!.planId
-      );
+      // Try to find current plan in database first
+      let currentPlan: Plan | null = null;
+      if (validatedData.currentPlan.planId) {
+        currentPlan = allPlans.find(
+          p => p.planId === validatedData.currentPlan!.planId
+        ) as Plan | null;
+      }
+
+      // If not found in database, calculate from provided data
+      if (!currentPlan && validatedData.currentPlan.ratePerKwh) {
+        // Create a temporary plan object from current plan data
+        const tempPlan: Plan = {
+          id: 'current-plan',
+          planId: validatedData.currentPlan.planId || 'current-plan',
+          state: validatedData.state || 'TX',
+          supplierName: validatedData.currentPlan.supplierName || 'Current Supplier',
+          planName: validatedData.currentPlan.planName || 'Current Plan',
+          rateType: validatedData.currentPlan.rateType || 'fixed',
+          ratePerKwh: validatedData.currentPlan.ratePerKwh,
+          onPeakRate: validatedData.currentPlan.onPeakRate,
+          offPeakRate: validatedData.currentPlan.offPeakRate,
+          monthlyFee: validatedData.currentPlan.monthlyFee || 0,
+          contractLengthMonths: validatedData.currentPlan.contractLengthMonths || null,
+          earlyTerminationFee: validatedData.currentPlan.earlyTerminationFee || 0,
+          renewablePct: 0, // Unknown
+          supplierRating: 3.0, // Default
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        };
+        currentPlan = tempPlan;
+      }
 
       if (currentPlan) {
         const currentCost = calculatePlanCost(
-          currentPlan as Plan,
+          currentPlan,
           validatedData.monthlyUsageKwh,
           0
         );
@@ -94,9 +131,10 @@ export async function POST(request: NextRequest) {
           if (endDate > new Date()) {
             currentPlanEarlyTerminationFee = currentPlan.earlyTerminationFee;
           }
+        } else if (validatedData.currentPlan.earlyTerminationFee) {
+          // Use provided ETF if contract end date not specified
+          currentPlanEarlyTerminationFee = validatedData.currentPlan.earlyTerminationFee;
         }
-      } else {
-        console.warn(`Current plan ${validatedData.currentPlan.planId} not found in database`);
       }
     }
 

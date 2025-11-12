@@ -177,6 +177,7 @@ export default function RecommendationsPage() {
         const monthlyUsageKwh = safeGetItem(STORAGE_KEYS.USAGE_DATA, null);
         const preferences = safeGetItem(STORAGE_KEYS.PREFERENCES, null);
         const state = safeGetItem(STORAGE_KEYS.STATE, null);
+        const currentPlan = safeGetItem(STORAGE_KEYS.CURRENT_PLAN, null);
 
         if (!monthlyUsageKwh || !preferences) {
           router.push('/usage');
@@ -189,6 +190,7 @@ export default function RecommendationsPage() {
           state: state || undefined,
           monthlyUsageKwh,
           preferences,
+          currentPlan: currentPlan || undefined,
         };
 
         // Call API
@@ -260,6 +262,7 @@ export default function RecommendationsPage() {
       const monthlyUsageKwh = safeGetItem(STORAGE_KEYS.USAGE_DATA, null);
       const preferences = safeGetItem(STORAGE_KEYS.PREFERENCES, null);
       const state = safeGetItem(STORAGE_KEYS.STATE, null);
+      const currentPlan = safeGetItem(STORAGE_KEYS.CURRENT_PLAN, null);
 
       if (!monthlyUsageKwh || !preferences) {
         router.push('/usage');
@@ -272,6 +275,7 @@ export default function RecommendationsPage() {
         state: state || undefined,
         monthlyUsageKwh,
         preferences,
+        currentPlan: currentPlan || undefined,
       };
 
       // Call API to generate fresh recommendations
@@ -371,9 +375,35 @@ export default function RecommendationsPage() {
     }
   }
 
+  const hasCurrentPlan = !!safeGetItem(STORAGE_KEYS.CURRENT_PLAN, null);
+
   return (
     <div className="min-h-screen bg-slate-50 pt-4 pb-12 px-4">
       <div className="max-w-6xl mx-auto">
+        {/* CTA Banner for Adding Current Plan */}
+        {!hasCurrentPlan && (
+          <Card className="mb-6 border-2 border-blue-500 bg-blue-50">
+            <CardContent className="pt-6">
+              <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+                <div className="flex-1">
+                  <h3 className="text-lg font-bold text-blue-900 mb-1">
+                    💰 Get Cost Savings Analysis
+                  </h3>
+                  <p className="text-blue-700">
+                    Add your current plan to see exactly how much you could save by switching!
+                  </p>
+                </div>
+                <Button 
+                  onClick={() => router.push('/preferences')}
+                  className="bg-blue-600 hover:bg-blue-700 text-white min-h-[44px] text-base whitespace-nowrap"
+                >
+                  Add Current Plan
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Header */}
         <div className="mb-6 text-center">
           <h1 className="text-2xl md:text-3xl font-bold text-slate-900 mb-2">
@@ -576,8 +606,20 @@ export default function RecommendationsPage() {
                       ${rec.projectedAnnualCost.toFixed(0)}/yr
                     </div>
                     {rec.annualSavings !== 0 && (
-                      <div className={`text-lg font-semibold ${rec.annualSavings > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                        {rec.annualSavings > 0 ? '+' : ''}${rec.annualSavings.toFixed(0)}/yr savings
+                      <div className={`text-lg font-semibold ${
+                        rec.annualSavings > 0 
+                          ? 'text-green-600' 
+                          : rec.annualSavings > -50 
+                            ? 'text-yellow-600' 
+                            : 'text-red-600'
+                      }`}>
+                        {rec.annualSavings > 0 ? (
+                          <>💰 Save ${Math.abs(rec.annualSavings).toFixed(0)}/year</>
+                        ) : rec.annualSavings > -50 ? (
+                          <>⚠️ Similar cost (${Math.abs(rec.annualSavings).toFixed(0)} difference)</>
+                        ) : (
+                          <>📈 ${Math.abs(rec.annualSavings).toFixed(0)} more expensive</>
+                        )}
                       </div>
                     )}
                   </div>

@@ -10,15 +10,19 @@ import { Slider } from '@/components/ui/slider';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { safeGetItem, safeSetItem, STORAGE_KEYS } from '@/lib/utils/storage';
 import { SUPPORTED_STATES, STATE_NAMES, DEFAULT_PREFERENCES } from '@/lib/constants';
+import { CurrentPlanForm, CurrentPlanData } from '@/components/forms/current-plan-form';
+import { useAuth } from '@/lib/auth/context';
 
 export default function PreferencesPage() {
   const router = useRouter();
+  const { user } = useAuth();
   const [state, setState] = useState<string>('TX');
   const [priority, setPriority] = useState<string>(DEFAULT_PREFERENCES.priority);
   const [minRenewable, setMinRenewable] = useState<number>(DEFAULT_PREFERENCES.minRenewablePct);
   const [maxContract, setMaxContract] = useState<number>(DEFAULT_PREFERENCES.maxContractMonths);
   const [minRating, setMinRating] = useState<number>(DEFAULT_PREFERENCES.minSupplierRating);
-  const [currentPlan] = useState<string>('');
+  const [currentPlan, setCurrentPlan] = useState<CurrentPlanData | null>(null);
+  const [showCurrentPlanForm, setShowCurrentPlanForm] = useState(false);
 
   useEffect(() => {
     // Check if usage data exists
@@ -26,7 +30,49 @@ export default function PreferencesPage() {
     if (!usageData) {
       router.push('/usage');
     }
-  }, [router]);
+
+    // Load saved current plan if exists
+    const savedCurrentPlan = safeGetItem<CurrentPlanData | null>(STORAGE_KEYS.CURRENT_PLAN, null);
+    if (savedCurrentPlan) {
+      setCurrentPlan(savedCurrentPlan);
+    }
+
+    // If user is logged in, try to fetch current plan from database
+    if (user) {
+      fetch('/api/user/current-plan')
+        .then(res => res.ok ? res.json() : null)
+        .then(data => {
+          if (data?.data) {
+            setCurrentPlan(data.data);
+          }
+        })
+        .catch(() => {
+          // Silently fail - user can still add manually
+        });
+    }
+  }, [router, user]);
+
+  const handleCurrentPlanSubmit = async (plan: CurrentPlanData) => {
+    setCurrentPlan(plan);
+    setShowCurrentPlanForm(false);
+    
+    // Save to sessionStorage
+    safeSetItem(STORAGE_KEYS.CURRENT_PLAN, plan);
+
+    // Save to database if user is logged in
+    if (user) {
+      try {
+        await fetch('/api/user/current-plan', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(plan),
+        });
+      } catch (error) {
+        console.error('Failed to save current plan to database:', error);
+        // Don't block - continue with sessionStorage
+      }
+    }
+  };
 
   const handleSubmit = () => {
     // Save preferences to sessionStorage
@@ -204,17 +250,66 @@ export default function PreferencesPage() {
           </Card>
 
           {/* Current Plan (Optional) */}
-          <Card>
+          <Card className="border-blue-200 bg-blue-50">
             <CardHeader>
-              <CardTitle>Current Plan (Optional)</CardTitle>
-              <CardDescription>
-                Help us calculate your potential savings
+              <CardTitle className="text-blue-900">💡 Add Your Current Plan (Optional)</CardTitle>
+              <CardDescription className="text-blue-700">
+                Get personalized cost savings analysis by adding your current energy plan.
+                We&apos;ll show you exactly how much you could save by switching.
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <p className="text-sm text-slate-600 mb-4">
-                  Currently, you can skip this field. We&apos;ll still show you great recommendations!
-              </p>
+              {currentPlan ? (
+                <div className="space-y-4">
+                  <div className="p-4 bg-white rounded-lg border border-blue-200">
+                    <p className="font-semibold text-blue-900 mb-2">
+                      Current Plan: {currentPlan.planName}
+                    </p>
+                    <p className="text-sm text-blue-700">
+                      Supplier: {currentPlan.supplierName} | 
+                      Rate: ${currentPlan.ratePerKwh.toFixed(4)}/kWh | 
+                      Monthly Fee: ${currentPlan.monthlyFee.toFixed(2)}
+                    </p>
+                  </div>
+                  <div className="flex gap-3">
+                    <Button
+                      onClick={() => setShowCurrentPlanForm(true)}
+                      variant="outline"
+                      className="min-h-[44px] text-base"
+                    >
+                      Edit Plan
+                    </Button>
+                    <Button
+                      onClick={() => {
+                        setCurrentPlan(null);
+                        safeSetItem(STORAGE_KEYS.CURRENT_PLAN, null);
+                        setShowCurrentPlanForm(false);
+                      }}
+                      variant="outline"
+                      className="min-h-[44px] text-base"
+                    >
+                      Remove Plan
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <Button
+                  onClick={() => setShowCurrentPlanForm(true)}
+                  className="bg-blue-600 hover:bg-blue-700 text-white min-h-[44px] text-base"
+                >
+                  Add Current Plan
+                </Button>
+              )}
+              
+              {showCurrentPlanForm && (
+                <div className="mt-4">
+                  <CurrentPlanForm
+                    onSubmit={handleCurrentPlanSubmit}
+                    onSkip={() => setShowCurrentPlanForm(false)}
+                    initialData={currentPlan || undefined}
+                  />
+                </div>
+              )}
             </CardContent>
           </Card>
 
