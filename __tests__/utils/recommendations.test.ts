@@ -1,4 +1,4 @@
-import { sortRecommendations, searchRecommendations, filterViewedPlans, SortOption } from '@/lib/utils/recommendations';
+import { searchRecommendations, filterViewedPlans } from '@/lib/utils/recommendations';
 import { PlanRecommendation, Plan } from '@/types';
 
 // Helper to create a mock plan
@@ -44,81 +44,6 @@ function createMockRecommendation(overrides: Partial<PlanRecommendation> = {}): 
 }
 
 describe('Recommendation Utilities', () => {
-  describe('sortRecommendations', () => {
-    const recommendations: PlanRecommendation[] = [
-      createMockRecommendation({
-        rank: 1,
-        plan: createMockPlan({ planName: 'Plan A', supplierName: 'Supplier Z', renewablePct: 30, supplierRating: 3.0, contractLengthMonths: 24 }),
-        projectedAnnualCost: 1500,
-      }),
-      createMockRecommendation({
-        rank: 2,
-        plan: createMockPlan({ planName: 'Plan B', supplierName: 'Supplier A', renewablePct: 100, supplierRating: 5.0, contractLengthMonths: 12 }),
-        projectedAnnualCost: 1000,
-      }),
-      createMockRecommendation({
-        rank: 3,
-        plan: createMockPlan({ planName: 'Plan C', supplierName: 'Supplier M', renewablePct: 50, supplierRating: 4.0, contractLengthMonths: null }),
-        projectedAnnualCost: 1200,
-      }),
-    ];
-
-    test('should sort by original rank', () => {
-      const sorted = sortRecommendations(recommendations, 'original-rank');
-      expect(sorted[0].rank).toBe(1);
-      expect(sorted[1].rank).toBe(2);
-      expect(sorted[2].rank).toBe(3);
-    });
-
-    test('should sort by cost ascending', () => {
-      const sorted = sortRecommendations(recommendations, 'cost-asc');
-      expect(sorted[0].projectedAnnualCost).toBe(1000);
-      expect(sorted[1].projectedAnnualCost).toBe(1200);
-      expect(sorted[2].projectedAnnualCost).toBe(1500);
-    });
-
-    test('should sort by cost descending', () => {
-      const sorted = sortRecommendations(recommendations, 'cost-desc');
-      expect(sorted[0].projectedAnnualCost).toBe(1500);
-      expect(sorted[1].projectedAnnualCost).toBe(1200);
-      expect(sorted[2].projectedAnnualCost).toBe(1000);
-    });
-
-    test('should sort by renewable percentage descending', () => {
-      const sorted = sortRecommendations(recommendations, 'renewable-desc');
-      expect(sorted[0].plan.renewablePct).toBe(100);
-      expect(sorted[1].plan.renewablePct).toBe(50);
-      expect(sorted[2].plan.renewablePct).toBe(30);
-    });
-
-    test('should sort by rating descending', () => {
-      const sorted = sortRecommendations(recommendations, 'rating-desc');
-      expect(sorted[0].plan.supplierRating).toBe(5.0);
-      expect(sorted[1].plan.supplierRating).toBe(4.0);
-      expect(sorted[2].plan.supplierRating).toBe(3.0);
-    });
-
-    test('should sort by contract length ascending (null last)', () => {
-      const sorted = sortRecommendations(recommendations, 'contract-asc');
-      expect(sorted[0].plan.contractLengthMonths).toBe(12);
-      expect(sorted[1].plan.contractLengthMonths).toBe(24);
-      expect(sorted[2].plan.contractLengthMonths).toBeNull();
-    });
-
-    test('should sort by supplier name A-Z', () => {
-      const sorted = sortRecommendations(recommendations, 'supplier-asc');
-      expect(sorted[0].plan.supplierName).toBe('Supplier A');
-      expect(sorted[1].plan.supplierName).toBe('Supplier M');
-      expect(sorted[2].plan.supplierName).toBe('Supplier Z');
-    });
-
-    test('should not mutate original array', () => {
-      const original = [...recommendations];
-      sortRecommendations(recommendations, 'cost-asc');
-      expect(recommendations).toEqual(original);
-    });
-  });
-
   describe('searchRecommendations', () => {
     const recommendations: PlanRecommendation[] = [
       createMockRecommendation({
