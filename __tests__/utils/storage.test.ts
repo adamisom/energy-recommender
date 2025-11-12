@@ -24,6 +24,15 @@ Object.defineProperty(window, 'sessionStorage', {
 });
 
 describe('Storage Utilities', () => {
+  // Suppress console.error for these tests
+  const originalConsoleError = console.error;
+  beforeAll(() => {
+    console.error = jest.fn();
+  });
+  afterAll(() => {
+    console.error = originalConsoleError;
+  });
+
   beforeEach(() => {
     mockSessionStorage.clear();
   });

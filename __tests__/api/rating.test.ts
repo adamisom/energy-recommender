@@ -29,6 +29,15 @@ jest.mock('@/lib/rate-limit', () => ({
 }));
 
 describe('Rating API', () => {
+  // Suppress console.error for these tests
+  const originalConsoleError = console.error;
+  beforeAll(() => {
+    console.error = jest.fn();
+  });
+  afterAll(() => {
+    console.error = originalConsoleError;
+  });
+
   beforeEach(() => {
     jest.clearAllMocks();
   });

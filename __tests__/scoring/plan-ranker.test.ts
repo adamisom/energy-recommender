@@ -39,6 +39,15 @@ const createMockScoredPlan = (
 });
 
 describe('filterAndRankPlans', () => {
+  // Suppress console.warn for these tests
+  const originalConsoleWarn = console.warn;
+  beforeAll(() => {
+    console.warn = jest.fn();
+  });
+  afterAll(() => {
+    console.warn = originalConsoleWarn;
+  });
+
   test('should return top 5 plans sorted by score', () => {
     const scoredPlans = [
       createMockScoredPlan({}, 85),
