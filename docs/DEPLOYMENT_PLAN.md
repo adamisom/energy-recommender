@@ -74,7 +74,15 @@ Follow prompts:
    - **Environment:** Production, Preview, Development (all three)
    - Click **Save**
 
-> **Important:** `NEXT_PUBLIC_*` variables are exposed to browser. Redeploy after adding variables (they're baked into build).
+**Required Variables:**
+- `ANTHROPIC_API_KEY` - Your Anthropic API key
+- `DATABASE_URL` - Supabase PostgreSQL connection string
+
+**Required for Auth (if using):**
+- `NEXT_PUBLIC_SUPABASE_URL` - Supabase project URL (from Supabase dashboard → Settings → API)
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY` - Supabase anonymous key (from Supabase dashboard → Settings → API)
+
+> **Critical:** After adding `NEXT_PUBLIC_*` variables, you **MUST redeploy** because they're baked into the build at build time. Run `vercel --prod` again after adding them.
 
 ### 5. Deploy to Production
 

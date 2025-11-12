@@ -217,6 +217,51 @@ npm run dev
 - [ ] Wait 60 seconds
 - [ ] Should work again
 
+#### Test 3.7: Preference Differentiation
+**Purpose:** Verify that different preferences produce different top recommendations
+
+**Prerequisites:**
+- Use the same usage data for all tests (e.g., the sample data from Step 2)
+- Select "Texas (TX)" as the state for all tests
+
+**Test Case 1: Cost Priority**
+- [ ] Go to `/preferences`
+- [ ] Select priority: "💰 Lowest Cost"
+- [ ] Set min renewable: 0%
+- [ ] Set max contract: 24 months
+- [ ] Set min rating: 3.0
+- [ ] Get recommendations
+- [ ] **Expected:** Top recommendation should be **TX-017 (Flash 24)** or similar low-cost plan
+- [ ] Verify the top plan has a low rate per kWh (around $0.0999/kWh)
+- [ ] Note the plan ID of the #1 recommendation
+
+**Test Case 2: Renewable Priority**
+- [ ] Click "Try Different Preferences"
+- [ ] Select priority: "🌱 Most Renewable"
+- [ ] Set min renewable: 50% (or higher)
+- [ ] Set max contract: 24 months
+- [ ] Set min rating: 3.0
+- [ ] Get recommendations
+- [ ] **Expected:** Top recommendation should be **TX-019 (Green Value 12)** or **TX-003 (Pollution Free e-Plus 12)**
+- [ ] Verify the top plan has 100% renewable energy
+- [ ] Note the plan ID - it should be **different** from Test Case 1
+
+**Test Case 3: High Rating Requirement**
+- [ ] Click "Try Different Preferences"
+- [ ] Select priority: "⚖️ Balanced" (or any priority)
+- [ ] Set min renewable: 0%
+- [ ] Set max contract: 24 months
+- [ ] Set min rating: **4.8** (high requirement)
+- [ ] Get recommendations
+- [ ] **Expected:** Top recommendation should be **TX-018 (Elite Premium 12)**
+- [ ] Verify the top plan has a rating of 4.8/5.0
+- [ ] Note the plan ID - it should be **different** from both previous tests
+
+**Verification:**
+- [ ] All three tests produced **different** top recommendations
+- [ ] Each recommendation matches the selected priority/constraints
+- [ ] The scoring system is working correctly to differentiate plans
+
 ---
 
 ### Section 4: Plan Details Page Testing

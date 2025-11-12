@@ -11,7 +11,8 @@
     "type-check": "tsc --noEmit",
     "seed": "tsx prisma/seed.ts",
     "plans:export": "tsx scripts/manage-plans.ts export",
-    "plans:import": "tsx scripts/manage-plans.ts import"
+    "plans:import": "tsx scripts/manage-plans.ts import",
+    "test:recommendations": "tsx scripts/test-recommendations.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.68.0",
