@@ -84,7 +84,10 @@ If you want to enable user authentication:
    - **Project URL** - `https://xxxxxxxxxxxxx.supabase.co`
    - **anon public** key - The long JWT token (safe for client-side)
 
-> **Note:** The app works perfectly fine **without** auth (anonymous mode). You can skip the API keys if you just want to test the recommendation engine.
+> **Note:** The app works in anonymous mode, but authentication enables:
+> - Saving recommendation history (last 5 sets)
+> - Persisting usage data across sessions
+> - Viewing recommendation history
 
 ### 2.4 Configure Authentication Settings (Optional - for Auth)
 
@@ -116,7 +119,7 @@ If you're using authentication, configure these settings in your Supabase dashbo
 6. Copy the key immediately (starts with `sk-ant-`)
 7. **Save it securely** - you won't see it again!
 
-> **Cost:** Claude 3.5 Sonnet costs ~$0.003 per recommendation (3 explanations). The free tier credits are plenty for development and testing.
+> **Cost:** Claude 3.5 Sonnet costs ~$0.005 per recommendation (5 explanations). The free tier credits are plenty for development and testing.
 
 ---
 
@@ -220,7 +223,7 @@ Follow the smoke test in `docs/MANUAL_TESTING_GUIDE.md`:
 5. Generate recommendations
 6. Verify AI explanations appear
 
-If you see 3 recommendations with personalized explanations, you're all set! ✅
+If you see 5 recommendations with personalized explanations, you're all set! ✅
 
 ---
 
@@ -357,8 +360,11 @@ Create `.vscode/settings.json` (optional):
 |----------|----------|---------|--------------|
 | `ANTHROPIC_API_KEY` | ✅ Yes | AI explanations | [console.anthropic.com](https://console.anthropic.com/) |
 | `DATABASE_URL` | ✅ Yes | Database connection | Supabase → Settings → Database |
-| `NEXT_PUBLIC_SUPABASE_URL` | ❌ Optional | Auth (client-side) | Supabase → Settings → API |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | ❌ Optional | Auth (client-side) | Supabase → Settings → API |
+| `NEXT_PUBLIC_SUPABASE_URL` | ⚠️ Recommended | Auth & history | Supabase → Settings → API |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | ⚠️ Recommended | Auth & history | Supabase → Settings → API |
+| `SUPABASE_SERVICE_ROLE_KEY` | ❌ Optional | Admin operations | Supabase → Settings → API |
+| `KV_REST_API_URL` | ❌ Optional | Rate limiting (Vercel) | Vercel KV dashboard |
+| `KV_REST_API_TOKEN` | ❌ Optional | Rate limiting (Vercel) | Vercel KV dashboard |
 | `ENABLE_SEASONAL_SCORING` | ❌ Optional | Feature flag | Set to `true` to enable |
 
 > **Note:** Variables prefixed with `NEXT_PUBLIC_` are exposed to the browser. Keep `ANTHROPIC_API_KEY` and `DATABASE_URL` server-side only (no prefix).

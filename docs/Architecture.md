@@ -83,6 +83,12 @@
 │                    │ - currentPlan      │                    │          │
 │                    └────────────────────┘                    │          │
 │                                                               │          │
+│                          localStorage                        │          │
+│                    ┌────────────────────┐                    │          │
+│                    │ - viewedPlans      │                    │          │
+│                    │ - favoritePlans   │                    │          │
+│                    └────────────────────┘                    │          │
+│                                                               │          │
 └───────────────────────────────────────────────────────────────┼──────────┘
                                                                 │
                                                        POST /api/recommendations
@@ -100,7 +106,7 @@
 │  │  │ 4. Analyze Usage Patterns                                    │ │ │
 │  │  │ 5. Calculate Costs (all plans)                              │ │ │
 │  │  │ 6. Score Plans (custom algorithm)                           │ │ │
-│  │  │ 7. Rank & Filter (top 3)                                    │ │ │
+│  │  │ 7. Rank & Filter (top 5)                                    │ │ │
 │  │  │ 8. Generate Explanations (AI) ◄──────────┐                 │ │ │
 │  │  │ 9. Build Response                        │                 │ │ │
 │  │  └──────────────────────────────────────────┼─────────────────┘ │ │
@@ -146,7 +152,7 @@ app/
 ├── usage/page.tsx (Client Component)
 │   └── Usage Input Form
 │       - Manual entry (12 inputs)
-│       - CSV upload
+│       - CSV upload (papaparse)
 │       - Validation
 │       └─> sessionStorage
 │
@@ -161,10 +167,24 @@ app/
 ├── recommendations/page.tsx (Client Component)
 │   └── Results Display
 │       - Loading state
-│       - Top 3 cards
+│       - Top 5 cards
+│       - Search & filter (name/supplier, hide viewed)
+│       - Favorites/bookmarks (max 5)
+│       - Compare plans (2 at once)
 │       - AI explanations
 │       - Sign up buttons
 │       └─> API call
+│
+├── recommendations/history/page.tsx (Client Component)
+│   └── Recommendation History
+│       - Last 5 recommendation sets
+│       - Preferences used
+│       - Top 3 plans per set
+│
+├── recommendations/favorites/page.tsx (Client Component)
+│   └── Favorite Plans
+│       - Up to 5 saved favorites
+│       - Remove favorites
 │
 └── plan/[id]/page.tsx (Server Component)
     └── Plan Details
@@ -203,8 +223,9 @@ lib/
 │   └── plan-ranker.ts
 │       └── filterAndRankPlans()
 │           - Filter by constraints
-│           - Relax if <3 plans
+│           - Relax if <5 plans
 │           - Sort by score
+│           - Return top 5
 │
 ├── anthropic/
 │   ├── client.ts
@@ -303,14 +324,15 @@ lib/
 │ - Fetch plans from DB                                            │
 │ - Run scoring algorithm                                          │
 │ - Generate AI explanations                                       │
-│ - Return top 3 recommendations                                   │
+│ - Return top 5 recommendations                                   │
 └────┬────────────────────────────────────────────────────────────┘
      │ API Response
      ▼
 ┌─────────────────────────────────────────────────────────────────┐
 │ Step 5: Display Results                                          │
 │ Component: app/recommendations/page.tsx (Client)                 │
-│ - Show top 3 cards with explanations                             │
+│ - Show top 5 cards with explanations                             │
+│ - Search, filter, favorites, compare features                     │
 │ - "View Details" → /plan/[id]                                    │
 │ - "Sign Up" → Modal (MVP limitation)                             │
 │ - "Try Different Preferences" → /preferences                     │
@@ -412,16 +434,18 @@ CLIENT                          SERVER                       EXTERNAL SERVICES
   │                               │                                │
   │                               │ 8. Rank & Filter               │
   │                               │    - Sort by finalScore        │
-  │                               │    - Take top 3                │
+  │                               │    - Take top 5                │
   │                               │                                │
   │                               │ 9. Generate Explanations (AI)  │
   │                               │    Promise.all([               │
   │                               │      explain(plan1),  ────────>│
   │                               │      explain(plan2),  ────────>│ Claude API
-  │                               │      explain(plan3)   ────────>│ (3 parallel)
+  │                               │      explain(plan3),  ────────>│ (5 parallel)
+  │                               │      explain(plan4),  ────────>│
+  │                               │      explain(plan5)   ────────>│
   │                               │    ])                          │
   │                               │<───────────────────────────────┤
-  │                               │    [3 explanations]            │
+  │                               │    [5 explanations]            │
   │                               │                                │
   │                               │ 10. Check Cache First          │
   │                               │     (skip API if cached)       │
@@ -514,7 +538,7 @@ CLIENT                          SERVER                       EXTERNAL SERVICES
 │  │                                                       │  │
 │  │ Cache Result:                                         │  │
 │  │ explanationCache.set(key, explanation)               │  │
-│  │ (max 1000 entries, FIFO eviction)                   │  │
+│  │ (max 100 entries, LRU eviction)                    │  │
 │  └──────────────────────────────────────────────────────┘  │
 └────────────────────────────────────────────────────────────┘
 ```
@@ -585,11 +609,11 @@ Optimization Strategy:
 └────────────────────────────────────────────────────┘
 
 Cost per recommendation request:
-- No cache hits: 3 explanations × $0.001 = $0.003
-- With 70% hit rate: 1 explanation × $0.001 = $0.001
+- No cache hits: 5 explanations × $0.001 = $0.005
+- With 70% hit rate: 1.5 explanations × $0.001 = $0.0015
 - Fallback (error): $0.000
 
-Expected: 100 requests/day × $0.001 avg = $0.10/day = $3/month
+Expected: 100 requests/day × $0.002 avg = $0.20/day = $6/month
 ```
 
 ---
@@ -770,7 +794,6 @@ Headers (429):
 
 ┌─────────────────────────────────────────────────────────┐
 │                        User                              │
-│                    (Optional for MVP)                    │
 ├─────────────────────────────────────────────────────────┤
 │ PK  id                    String (cuid)                  │
 │ UQ  email                 String                         │
@@ -780,8 +803,31 @@ Headers (429):
 │     updatedAt             DateTime                       │
 └─────────────────────────────────────────────────────────┘
 
-Note: No foreign key relationships in MVP
-      (users don't save recommendations)
+┌─────────────────────────────────────────────────────────┐
+│                  SavedRecommendation                     │
+├─────────────────────────────────────────────────────────┤
+│ PK  id                    String (cuid)                  │
+│ FK  userId                String → User.id              │
+│     recommendations       Json (top 5 plans)            │
+│     monthlyUsageKwh       Int[] (12 months)              │
+│     preferences           Json                           │
+│     state                 String                         │
+│     createdAt             DateTime                       │
+└─────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────┐
+│                   SavedUsageData                         │
+├─────────────────────────────────────────────────────────┤
+│ PK  id                    String (cuid)                  │
+│ FK  userId                String → User.id              │
+│     monthlyKwh            Int[] (12 months)              │
+│     state                 String                         │
+│     createdAt             DateTime                       │
+│     updatedAt             DateTime                       │
+└─────────────────────────────────────────────────────────┘
+
+Note: Users can save recommendations and usage data
+      (last 5 recommendation sets per user)
 ```
 
 ### Database Queries
@@ -814,11 +860,11 @@ ORDER BY supplierRating DESC;
 app/api/
 ├── recommendations/
 │   └── route.ts                    [POST]
-│       - Rate limiting (10 req/min)
+│       - Rate limiting (10 req/min, Vercel KV)
 │       - Request validation (Zod)
 │       - Main recommendation logic
 │       - AI explanation generation
-│       - Response: Top 3 recommendations
+│       - Response: Top 5 recommendations
 │
 └── plans/
     ├── route.ts                    [GET]
@@ -843,7 +889,7 @@ Request arrives
 │    ┌──────────────────────────────────────────────┐    │
 │    │ Check: IP address                             │    │
 │    │ Limit: 10 requests per 60 seconds            │    │
-│    │ Store: In-memory Map (dev only)              │    │
+│    │ Store: Vercel KV (prod) or in-memory (dev)   │    │
 │    │                                               │    │
 │    │ If exceeded:                                  │    │
 │    │   return 429 Too Many Requests               │    │
@@ -910,18 +956,18 @@ Request arrives
 │    │                                               │    │
 │    │ d) filterAndRankPlans(...)                   │    │
 │    │    - Filter by constraints                   │    │
-│    │    - Relax if <3 matches                     │    │
+│    │    - Relax if <5 matches                     │    │
 │    │    - Sort by finalScore DESC                 │    │
-│    │    - Return top 3                            │    │
+│    │    - Return top 5                            │    │
 │    │    Time: <5ms                                │    │
 │    └──────────────────────────────────────────────┘    │
 └────┬────────────────────────────────────────────────────┘
-     │ TOP 3 PLANS
+     │ TOP 5 PLANS
      ▼
 ┌─────────────────────────────────────────────────────────┐
 │ 5. AI EXPLANATION GENERATION (Anthropic Claude)         │
 │    ┌──────────────────────────────────────────────┐    │
-│    │ 🤖 For each of top 3 plans (parallel):       │    │
+│    │ 🤖 For each of top 5 plans (parallel):       │    │
 │    │                                               │    │
 │    │ generateExplanationWithCache(context)        │    │
 │    │ ├─ Check cache first                         │    │
@@ -935,7 +981,7 @@ Request arrives
 │    │    └─ Return explanation                     │    │
 │    │                                               │    │
 │    │ Time: 500ms-2s per call (parallel)          │    │
-│    │ Total: 1-2 seconds for all 3                │    │
+│    │ Total: 1-2 seconds for all 5                │    │
 │    │                                               │    │
 │    │ Error handling:                               │    │
 │    │ - Timeout → Use template                     │    │
@@ -1136,7 +1182,7 @@ Input: Plan, Usage, Preferences, All Costs
 ### AI Explanation Generation Flow
 
 ```
-Input: Top 3 Scored Plans
+Input: Top 5 Scored Plans
      │
      ▼
 ┌────────────────────────────────────────────────────────────┐
@@ -1210,15 +1256,15 @@ Input: Top 3 Scored Plans
 │  ┌──────────────────────────────────────────────────────┐  │
 │  │ 6. Cache Result                                       │  │
 │  │    explanationCache.set(key, explanation)            │  │
-│  │    (Check size limit: 1000 max)                      │  │
+│  │    (Check size limit: 100 max, LRU eviction)         │  │
 │  └──────────────────────────────────────────────────────┘  │
 │                                                              │
-│  Promise.all() waits for all 3 to complete                 │
+│  Promise.all() waits for all 5 to complete                 │
 │  Total time: ~1-2 seconds (parallel)                       │
 └──────────────────────────────────────────────────────────────┘
      │
      ▼
-Return [explanation1, explanation2, explanation3]
+Return [explanation1, explanation2, explanation3, explanation4, explanation5]
 ```
 
 ---
@@ -1251,7 +1297,7 @@ Return [explanation1, explanation2, explanation3]
 │  │  ┌────────────────────────────────────────────────┐   │    │
 │  │  │           Cache Layer (In-Memory)              │   │    │
 │  │  │  - Key: state-planId-rank-priority             │   │    │
-│  │  │  - Max size: 1000 entries                      │   │    │
+│  │  │  - Max size: 100 entries (LRU)                 │   │    │
 │  │  │  - Hit rate: ~70-80%                           │   │    │
 │  │  └────────────────────────────────────────────────┘   │    │
 │  │                         │                               │    │
@@ -1432,7 +1478,7 @@ CLIENT                          API ROUTE                    SERVICES
   │                               │                             │
   │                               │ Generate explanations       │
   │                               ├────────────────────────────>│
-  │                               │   Call Claude API (3×)      │
+  │                               │   Call Claude API (5×)      │
   │                               │<────────────────────────────┤
   │                               │   Explanations              │
   │                               │                             │
@@ -1453,7 +1499,7 @@ Request/Response Sizes:
 
 POST /api/recommendations
   Request:  ~0.5 KB  (12 numbers + preferences)
-  Response: ~5-10 KB (3 plans + explanations)
+  Response: ~8-15 KB (5 plans + explanations)
 
 GET /api/plans
   Request:  ~0.1 KB  (query params)
@@ -1670,7 +1716,7 @@ User clicks "Get Recommendations"
 │    └─ Network latency                               │
 │                                                       │
 │ 2. Rate Limiting                     <5ms            │
-│    └─ In-memory lookup                              │
+│    └─ Vercel KV (prod) or in-memory (dev)          │
 │                                                       │
 │ 3. Request Validation                5ms             │
 │    └─ Zod schema parsing                            │
@@ -1691,7 +1737,7 @@ User clicks "Get Recommendations"
 │    └─ Array sort + slice                            │
 │                                                       │
 │ 9. AI Explanations (BOTTLENECK)      1-2 seconds ⚠️ │
-│    └─ 3× parallel Claude API calls                  │
+│    └─ 5× parallel Claude API calls                  │
 │    └─ Cache hit: 0ms (70% of time)                 │
 │                                                       │
 │ 10. Response Serialization           <5ms            │
@@ -1716,18 +1762,19 @@ Optimization opportunities:
 │                    CACHING LAYERS                        │
 ├─────────────────────────────────────────────────────────┤
 │                                                           │
-│ 1. LLM Response Cache (In-Memory)                       │
+│ 1. LLM Response Cache (LRU, In-Memory)                  │
 │    Location: lib/anthropic/explanations.ts              │
 │    Key: state-planId-rank-priority                      │
 │    TTL: Infinite (cleared on restart)                   │
-│    Size: Max 1000 entries                               │
+│    Size: Max 100 entries (LRU eviction)                 │
 │    Hit rate: 70-80%                                     │
 │                                                           │
-│ 2. Rate Limit Cache (In-Memory)                         │
+│ 2. Rate Limit Cache (Vercel KV or In-Memory)           │
 │    Location: lib/rate-limit.ts                          │
 │    Key: IP address                                      │
 │    TTL: 60 seconds                                      │
-│    Size: Unbounded (cleaned every 5 min in dev)        │
+│    Production: Vercel KV (distributed)                  │
+│    Development: In-memory (cleaned every 5 min)        │
 │                                                           │
 │ 3. Next.js Page Cache (CDN)                             │
 │    - Static pages: Cached at edge                       │
@@ -1740,7 +1787,7 @@ Optimization opportunities:
 └─────────────────────────────────────────────────────────┘
 
 Post-MVP caching opportunities:
-- Redis for distributed rate limiting
+- ✅ Vercel KV for distributed rate limiting (implemented)
 - Redis for LLM response cache (shared across instances)
 - Pre-computed plan costs (materialized view)
 ```
@@ -1894,12 +1941,12 @@ Function lifecycle:
 3. **API Request** → Server validates & processes
 4. **Database Query** → Fetch plans (Supabase)
 5. **Algorithms** → Score and rank (server CPU)
-6. **AI Generation** → Explain top 3 (Claude API)
+6. **AI Generation** → Explain top 5 (Claude API)
 7. **Response** → Client displays results
 8. **Plan Details** → Server-rendered page
 
 **Total round trips:** 1-2 per user session
-**AI calls:** 3 per recommendation (parallelized)
+**AI calls:** 5 per recommendation (parallelized)
 **Database queries:** 1-2 per session
 
 ---
