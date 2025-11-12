@@ -116,9 +116,11 @@ This document consolidates all post-MVP enhancements, known limitations, and fut
 
 ---
 
-### 5. Plan Catalog Expansion
+### 5. Plan Catalog Expansion - WILL REVISIT
 
 **Current State:** 23 manually seeded plans (mostly Texas)
+
+**Status:** Will revisit post-MVP. Current plan count is sufficient for MVP testing and demonstration.
 
 **Post-MVP Options:**
 

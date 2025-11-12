@@ -361,7 +361,7 @@ export default function RecommendationsPage() {
             className="flex-1 text-base py-6 font-semibold border-2 hover:bg-slate-50"
             size="lg"
           >
-            Try Different Preferences
+            🔄 Try Different Preferences
           </Button>
           <Button
             variant="outline"
@@ -369,8 +369,19 @@ export default function RecommendationsPage() {
             className="flex-1 text-base py-6 font-semibold border-2 hover:bg-slate-50"
             size="lg"
           >
-            Start Over
+            🔁 Start Over
           </Button>
+          {user && (
+            <Link href="/recommendations/history">
+              <Button
+                variant="outline"
+                className="text-base py-6 font-semibold border-2 hover:bg-slate-50"
+                size="lg"
+              >
+                📜 View History
+              </Button>
+            </Link>
+          )}
         </div>
 
         {/* Recommendations */}

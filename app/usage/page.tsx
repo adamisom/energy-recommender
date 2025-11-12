@@ -70,7 +70,7 @@ export default function UsagePage() {
         const Papa = (await import('papaparse')).default;
         
         // Auto-detect delimiter (comma, tab, etc.)
-        const parseResult = Papa.parse<string[]>(text, {
+        const parseResult = Papa.parse<number | null>(text, {
           header: false,
           skipEmptyLines: true,
           delimiter: '', // Auto-detect delimiter
@@ -82,8 +82,7 @@ export default function UsagePage() {
         });
 
         // Flatten the parsed data and filter out nulls
-        const values = parseResult.data
-          .flat()
+        const values = (parseResult.data.flat() as (number | null)[])
           .filter((v): v is number => v !== null && typeof v === 'number');
 
         if (values.length < 12) {

@@ -13,9 +13,17 @@ interface PageProps {
 export default async function PlanDetailsPage({ params }: PageProps) {
   const { id } = await params;
 
-  const plan = await prisma.plan.findUnique({
+  // Try to find by Prisma id (CUID) first, then by planId (e.g., "TX-001")
+  let plan = await prisma.plan.findUnique({
     where: { id },
   });
+
+  // If not found by id, try planId (for saved recommendations that only have planId)
+  if (!plan) {
+    plan = await prisma.plan.findUnique({
+      where: { planId: id },
+    });
+  }
 
   if (!plan) {
     notFound();

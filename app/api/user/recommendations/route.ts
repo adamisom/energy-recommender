@@ -54,6 +54,36 @@ export async function POST(request: NextRequest) {
       });
     }
 
+    // Check for duplicate recommendations (same preferences + usage + state)
+    // Compare by stringifying the relevant fields for exact match
+    const preferencesStr = JSON.stringify(validatedData.preferences);
+    const usageStr = JSON.stringify(validatedData.monthlyUsageKwh);
+
+    const existingRecommendations = await prisma.savedRecommendation.findMany({
+      where: { userId: dbUser.id },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    // Find and delete duplicates (same preferences + usage + state)
+    const duplicates = existingRecommendations.filter((rec) => {
+      const recPreferencesStr = JSON.stringify(rec.preferences);
+      const recUsageStr = JSON.stringify(rec.monthlyUsageKwh);
+      return (
+        recPreferencesStr === preferencesStr &&
+        recUsageStr === usageStr &&
+        rec.state === validatedData.state
+      );
+    });
+
+    if (duplicates.length > 0) {
+      await prisma.savedRecommendation.deleteMany({
+        where: {
+          id: { in: duplicates.map((d) => d.id) },
+        },
+      });
+    }
+
+    // Create new recommendation
     const savedRec = await prisma.savedRecommendation.create({
       data: {
         userId: dbUser.id, // Use Prisma-generated ID
@@ -63,6 +93,21 @@ export async function POST(request: NextRequest) {
         state: validatedData.state,
       },
     });
+
+    // Keep only the 5 most recent recommendations (delete older ones)
+    const allRecommendations = await prisma.savedRecommendation.findMany({
+      where: { userId: dbUser.id },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    if (allRecommendations.length > 5) {
+      const toDelete = allRecommendations.slice(5);
+      await prisma.savedRecommendation.deleteMany({
+        where: {
+          id: { in: toDelete.map((r) => r.id) },
+        },
+      });
+    }
 
     return NextResponse.json(savedRec);
   } catch (error) {
@@ -120,7 +165,7 @@ export async function GET() {
     const savedRecommendations = await prisma.savedRecommendation.findMany({
       where: { userId: dbUser.id },
       orderBy: { createdAt: 'desc' },
-      take: 10, // Last 10 recommendations
+      take: 5, // Last 5 recommendations (for history page)
     });
 
     return NextResponse.json({

@@ -18,7 +18,7 @@ import { expand } from 'dotenv-expand';
 const myEnv = config({ path: '.env.local' });
 expand(myEnv);
 
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, Prisma } from '@prisma/client';
 import { readFileSync, writeFileSync } from 'fs';
 import { join } from 'path';
 
@@ -168,7 +168,7 @@ async function importPlans() {
             supplierRating: planData.supplierRating,
             onPeakRate: planData.onPeakRate ?? null,
             offPeakRate: planData.offPeakRate ?? null,
-            planDetails: planData.planDetails ?? null,
+            planDetails: planData.planDetails ? (planData.planDetails as Prisma.InputJsonValue) : Prisma.JsonNull,
           },
           create: {
             planId: planData.planId,
@@ -184,7 +184,7 @@ async function importPlans() {
             supplierRating: planData.supplierRating,
             onPeakRate: planData.onPeakRate ?? null,
             offPeakRate: planData.offPeakRate ?? null,
-            planDetails: planData.planDetails ?? null,
+            planDetails: planData.planDetails ? (planData.planDetails as Prisma.InputJsonValue) : Prisma.JsonNull,
           },
         });
 
