@@ -2,7 +2,7 @@
 
 ## Where To Pick Up
 
-Implementation is basically done but we want a better app so we're implementing some FUTURE_WORK.md items and also testing with MANUAL_TESTING_GUIDE.mds — right now we're figuring out why Next.js isn't loading two `NEXT_*` env vars that we need for Supabase Auth, see TROUBLESHOOTING.md
+This app is done
 
 ## Workflow Guidance
 
