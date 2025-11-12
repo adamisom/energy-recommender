@@ -9,7 +9,9 @@
     "lint": "eslint",
     "test": "jest --passWithNoTests",
     "type-check": "tsc --noEmit",
-    "seed": "tsx prisma/seed.ts"
+    "seed": "tsx prisma/seed.ts",
+    "plans:export": "tsx scripts/manage-plans.ts export",
+    "plans:import": "tsx scripts/manage-plans.ts import"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.68.0",
