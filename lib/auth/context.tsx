@@ -65,8 +65,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         data: {
           name,
         },
+        emailRedirectTo: typeof window !== 'undefined' ? `${window.location.origin}/auth/callback` : undefined,
       },
     });
+
+    // Debug logging (development only)
+    if (process.env.NODE_ENV === 'development') {
+      if (error) {
+        console.error('Signup error:', {
+          message: error.message,
+          status: error.status,
+          name: error.name,
+        });
+      }
+    }
 
     return { error };
   };

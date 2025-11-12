@@ -34,14 +34,35 @@ export function AuthModal({ open, onOpenChange }: AuthModalProps) {
     const { error } = await signIn(loginEmail, loginPassword);
 
     if (error) {
-      setError(error.message);
+      // Map technical error messages to user-friendly ones
+      let userMessage = error.message;
+      
+      if (error.message?.includes('Invalid login credentials') || error.message?.includes('invalid')) {
+        userMessage = 'Invalid email or password. Please try again.';
+      } else if (error.message?.includes('Email not confirmed')) {
+        userMessage = 'Please check your email and confirm your account before signing in.';
+      } else if (error.message?.includes('rate limit')) {
+        userMessage = 'Too many attempts. Please try again in a few minutes.';
+      } else if (!error.message || error.message.includes('fetch')) {
+        userMessage = 'Unable to sign in. Please check your connection and try again.';
+      }
+      
+      setError(userMessage);
       setLoading(false);
     } else {
       // Clear sessionStorage on successful login
       safeClear();
+      
+      // Sync user to our Prisma database (in case they signed up before sync was added)
+      try {
+        await fetch('/api/user/sync', { method: 'POST' });
+      } catch (error) {
+        console.error('Failed to sync user after sign-in:', error);
+        // Don't block sign-in if sync fails - it will sync lazily on first data save
+      }
+      
       onOpenChange(false);
-      // Reload to fetch user data from database
-      window.location.reload();
+      // Auth context will automatically update user state via onAuthStateChange
     }
   };
 
@@ -53,14 +74,37 @@ export function AuthModal({ open, onOpenChange }: AuthModalProps) {
     const { error } = await signUp(signupEmail, signupPassword, signupName);
 
     if (error) {
-      setError(error.message);
+      // Map technical error messages to user-friendly ones
+      let userMessage = error.message;
+      
+      if (error.message?.includes('already registered') || error.message?.includes('already exists')) {
+        userMessage = 'An account with this email already exists. Try signing in instead.';
+      } else if (error.message?.includes('invalid') && error.message?.includes('email')) {
+        userMessage = 'Please enter a valid email address.';
+      } else if (error.message?.includes('password')) {
+        userMessage = 'Password must be at least 6 characters long.';
+      } else if (error.message?.includes('rate limit')) {
+        userMessage = 'Too many attempts. Please try again in a few minutes.';
+      } else if (!error.message || error.message.includes('fetch')) {
+        userMessage = 'Unable to create account. Please check your connection and try again.';
+      }
+      
+      setError(userMessage);
       setLoading(false);
     } else {
-      setError(null);
-      setLoading(false);
+      // Clear sessionStorage on successful signup
+      safeClear();
+      
+      // Sync user to our Prisma database immediately after sign-up
+      try {
+        await fetch('/api/user/sync', { method: 'POST' });
+      } catch (error) {
+        console.error('Failed to sync user after sign-up:', error);
+        // Don't block sign-up if sync fails - it will sync lazily on first data save
+      }
+      
       onOpenChange(false);
-      // Show success message
-      alert('Check your email to confirm your account!');
+      // Auth context will automatically update user state via onAuthStateChange
     }
   };
 
