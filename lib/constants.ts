@@ -32,7 +32,9 @@ export const RATE_LIMIT = {
 
 // Cache settings
 export const CACHE_SETTINGS = {
-  MAX_EXPLANATION_CACHE_SIZE: 1000,
+  // MVP: Reduced from 1000 to 100 for explanation cache
+  // Each cache entry represents one plan recommendation explanation (plan + rank + priority combination)
+  MAX_EXPLANATION_CACHE_SIZE: 100,
 } as const;
 
 // AI settings

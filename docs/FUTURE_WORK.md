@@ -33,49 +33,58 @@ This document consolidates all post-MVP enhancements, known limitations, and fut
 
 ## 🔧 Production Readiness
 
-### 2. Rate Limiting - In-Memory Store Limitation
+### 2. ✅ Rate Limiting - In-Memory Store Limitation - COMPLETED
 
-**Issue:** Current rate limiter uses in-memory Map, won't work in **serverless** deployment.
+**Status:** Implemented Vercel KV for distributed rate limiting (Nov 11, 2025)
 
-**Current Implementation:**
-```typescript
-// lib/rate-limit.ts
-const rateLimitMap = new Map<string, RateLimitRecord>()
-```
+**Implementation:**
+- ✅ Updated `lib/rate-limit.ts` to use Vercel KV for production
+- ✅ Falls back to in-memory store for local development (when KV not configured)
+- ✅ Updated API route to use async rate limiting
+- ✅ Updated tests to handle async and mock Vercel KV
+- ✅ Added Vercel KV setup instructions to `DEPLOYMENT_PLAN.md`
 
-**Problem:** Serverless functions (Vercel, Netlify, AWS Lambda) are stateless - each request may hit a different instance, so in-memory state is lost.
+**How it works:**
+- Production (Vercel): Uses Vercel KV for distributed rate limiting across serverless instances
+- Local Development: Falls back to in-memory Map when KV environment variables are not set
+- Automatic detection: Checks for `KV_URL` or `KV_REST_API_URL` + `KV_REST_API_TOKEN`
 
-**Note:** This is **NOT an issue** if deploying to a persistent server (Railway, Render, Fly.io, self-hosted Node.js) where the server stays running.
+**Setup Required:**
+1. Create Vercel KV database in Vercel dashboard
+2. Environment variables are automatically added by Vercel
+3. Rate limiting works seamlessly across all serverless instances
 
-**Solution (Post-MVP - only if using serverless):**
-- **Option A:** Deploy to persistent server (Railway, Render, etc.) - current rate limiting works fine
-- **Option B:** Use platform-specific rate limiting (Vercel's built-in, Netlify's, etc.)
-- **Option C:** Use Redis/Upstash for distributed rate limiting (works for any platform)
-
-**References:**
-- `lib/rate-limit.ts` (line comment: "Post-MVP: Replace with Vercel's rate limiting")
-- Implementation PRD Section 3055 (Known Limitation #1)
+**Files Modified:**
+- `lib/rate-limit.ts` - Added Vercel KV support with fallback
+- `app/api/recommendations/route.ts` - Updated to await async rate limit check
+- `__tests__/utils/rate-limit.test.ts` - Updated tests for async, added KV mock
+- `docs/DEPLOYMENT_PLAN.md` - Added Vercel KV setup instructions
+- `package.json` - Added `@vercel/kv` dependency
 
 ---
 
-### 3. Explanation Cache - No LRU Eviction
+### 3. ✅ Explanation Cache - No LRU Eviction - COMPLETED
 
-**Issue:** LLM explanation cache has max size (1000) but no LRU (Least Recently Used) eviction.
+**Status:** Implemented LRU cache and verified LLM explanation feature (Nov 11, 2025)
 
-**Current Implementation:**
-```typescript
-// lib/anthropic/explanations.ts
-if (cache.size >= MAX_CACHE_SIZE) {
-  cache.clear() // Nuclear option - clears ALL cache
-}
-```
+**Implementation:**
+- ✅ Reduced cache size from 1000 to 100 entries for MVP
+- ✅ Replaced Map with `lru-cache` library for proper LRU eviction
+- ✅ Added comments explaining cache size and purpose
+- ✅ Fixed LLM explanation validation (AI was generating explanations that were too long)
+- ✅ Updated prompt to request explanations under 400 characters
+- ✅ Created test script (`npm run test:explanations`) to verify LLM feature works
 
-**Better Solution:**
-- Implement proper LRU cache
-- Use library like `lru-cache`
-- OR: Move cache to Redis (shared across instances)
+**How it works:**
+- LRU cache automatically evicts least recently used entries when max size (100) is reached
+- Each cache entry = one plan recommendation explanation (plan + rank + priority combination)
+- Cache key format: `{state}-{planId}-{rank}-{priority}`
 
-**Impact:** Low - cache is just a performance optimization, not critical
+**Files Modified:**
+- `lib/constants.ts` - Reduced cache size to 100, added comments
+- `lib/anthropic/explanations.ts` - Implemented LRU cache, fixed validation, improved prompt
+- `package.json` - Added `lru-cache` dependency and `test:explanations` script
+- `scripts/test-explanations.ts` - New test script to verify LLM feature
 
 ---
 

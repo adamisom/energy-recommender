@@ -1,9 +1,13 @@
 import { anthropic, MODEL_NAME } from './client';
 import { Plan, UsageAnalysis, CostBreakdown, UserPreferences } from '@/types';
 import { CACHE_SETTINGS, AI_SETTINGS } from '@/lib/constants';
+import { LRUCache } from 'lru-cache';
 
-// In-memory cache for explanations
-const explanationCache = new Map<string, string>();
+// LRU cache for explanations (automatically evicts least recently used entries)
+// MVP: Cache size reduced to 100 entries (each entry = one plan recommendation explanation)
+const explanationCache = new LRUCache<string, string>({
+  max: CACHE_SETTINGS.MAX_EXPLANATION_CACHE_SIZE,
+});
 const MAX_CACHE_SIZE = CACHE_SETTINGS.MAX_EXPLANATION_CACHE_SIZE;
 
 interface ExplanationContext {
@@ -25,9 +29,10 @@ export async function generateExplanation(
   // Build cache key
   const cacheKey = buildCacheKey(context);
 
-  // Check cache first
-  if (explanationCache.has(cacheKey)) {
-    return explanationCache.get(cacheKey)!;
+  // Check cache first (LRU automatically tracks access)
+  const cached = explanationCache.get(cacheKey);
+  if (cached !== undefined) {
+    return cached;
   }
 
   try {
@@ -113,7 +118,7 @@ function buildPrompt(context: ExplanationContext): string {
     ? currentPlanCost - cost.firstYearTotal
     : null;
 
-  return `You are an expert energy plan advisor. Explain why this plan was recommended in 2-3 clear, specific sentences.
+  return `You are an expert energy plan advisor. Explain why this plan was recommended in 2-3 clear, specific sentences. Keep your response under 400 characters.
 
 User Profile:
 - Annual usage: ${usageAnalysis.totalAnnualKwh.toLocaleString()} kWh (${Math.round(usageAnalysis.averageMonthlyKwh).toLocaleString()} kWh/month average)
@@ -215,17 +220,12 @@ function buildCacheKey(context: ExplanationContext): string {
 }
 
 /**
- * Cache explanation with size limit
+ * Cache explanation using LRU (Least Recently Used) eviction
+ * LRU cache automatically evicts least recently used entries when max size is reached
  */
 function cacheExplanation(key: string, explanation: string): void {
-  // Simple FIFO eviction if cache is full
-  if (explanationCache.size >= MAX_CACHE_SIZE) {
-    const firstKey = explanationCache.keys().next().value;
-    if (firstKey !== undefined) {
-      explanationCache.delete(firstKey);
-    }
-  }
-  
+  // LRU cache automatically handles eviction when max size is reached
+  // No manual size checking needed - just set and LRU handles the rest
   explanationCache.set(key, explanation);
 }
 
@@ -233,6 +233,6 @@ function cacheExplanation(key: string, explanation: string): void {
  * Clear the cache (useful for testing)
  */
 export function clearExplanationCache(): void {
-  explanationCache.clear();
+  explanationCache.clear(); // LRUCache has clear() method
 }
 
