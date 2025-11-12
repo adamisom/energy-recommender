@@ -10,6 +10,7 @@ import { SignUpModal } from '@/components/shared/sign-up-modal';
 import { safeGetItem, safeClear, STORAGE_KEYS } from '@/lib/utils/storage';
 import { useSaveRecommendation } from '@/lib/hooks/use-hybrid-storage';
 import { useAuth } from '@/lib/auth/context';
+import { analyzeUsage } from '@/lib/scoring/usage-analysis';
 
 interface Recommendation {
   rank: number;
@@ -66,15 +67,54 @@ export default function RecommendationsPage() {
             if (savedData.data && savedData.data.length > 0) {
               // Use the most recent saved recommendation
               const mostRecent = savedData.data[0];
-              const savedRec = mostRecent.recommendations as RecommendationResponse;
               
-              // The saved recommendations field contains the full RecommendationResponse
-              if (savedRec && savedRec.recommendations) {
-                setResults(savedRec);
-                setIsShowingSaved(true);
+              // The saved recommendations field contains either:
+              // 1. The array of recommendations directly (current structure)
+              // 2. The full RecommendationResponse object (if we change saving logic)
+              const savedRecs = mostRecent.recommendations;
+              
+              // Check if it's an array (current structure) or has recommendations property (full response)
+              let recommendationsArray: Recommendation[];
+              let metadata: RecommendationResponse['metadata'];
+              
+              if (Array.isArray(savedRecs)) {
+                // Current structure: recommendations is the array directly
+                recommendationsArray = savedRecs as Recommendation[];
+                
+                // Reconstruct metadata from saved data
+                const monthlyUsageKwh = mostRecent.monthlyUsageKwh as number[];
+                const usageAnalysis = analyzeUsage(monthlyUsageKwh);
+                
+                metadata = {
+                  totalAnnualUsageKwh: usageAnalysis.totalAnnualKwh,
+                  usagePattern: usageAnalysis.pattern,
+                  generatedAt: typeof mostRecent.createdAt === 'string' 
+                    ? mostRecent.createdAt 
+                    : new Date(mostRecent.createdAt).toISOString(),
+                  confidence: 'medium' as const, // Default since we don't have original confidence
+                };
+              } else if (savedRecs && typeof savedRecs === 'object' && 'recommendations' in savedRecs) {
+                // Full RecommendationResponse structure
+                const fullResponse = savedRecs as RecommendationResponse;
+                recommendationsArray = fullResponse.recommendations;
+                metadata = fullResponse.metadata;
+              } else {
+                // Unexpected structure - show error instead of redirecting
+                setError('Unable to load saved recommendations. Please try generating new ones.');
                 setLoading(false);
                 return;
               }
+              
+              // Construct the full RecommendationResponse
+              const recommendationResponse: RecommendationResponse = {
+                recommendations: recommendationsArray,
+                metadata,
+              };
+              
+              setResults(recommendationResponse);
+              setIsShowingSaved(true);
+              setLoading(false);
+              return;
             }
           }
         }
@@ -262,14 +302,14 @@ export default function RecommendationsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 py-12 px-4">
+    <div className="min-h-screen bg-slate-50 pt-4 pb-12 px-4">
       <div className="max-w-6xl mx-auto">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl md:text-4xl font-bold text-slate-900 mb-2">
+        <div className="mb-6 text-center">
+          <h1 className="text-2xl md:text-3xl font-bold text-slate-900 mb-2">
             Your Personalized Recommendations
           </h1>
-          <div className="flex flex-wrap gap-4 text-sm text-slate-600">
+          <div className="flex flex-wrap gap-4 text-sm text-slate-600 justify-center">
             <span>
               📊 Annual Usage: {results.metadata.totalAnnualUsageKwh.toLocaleString()} kWh
             </span>
@@ -284,30 +324,29 @@ export default function RecommendationsPage() {
 
         {/* Saved Recommendations Notice */}
         {isShowingSaved && (
-          <Card className="mb-6 border-blue-200 bg-blue-50">
-            <CardContent className="pt-6">
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex-1">
-                  <p className="font-semibold text-blue-900 mb-1">
+          <div className="mt-2 mb-4 flex justify-center">
+            <Card className="border-blue-200 bg-blue-50 w-fit">
+              <CardContent className="px-6 py-1">
+                <div className="space-y-4">
+                  <p className="font-semibold text-blue-900">
                     📋 Showing Your Saved Recommendations
                   </p>
-                  <p className="text-sm text-blue-700">
-                    These are your previously saved recommendations. You can generate fresh recommendations with your current usage data and preferences.
-                  </p>
+                  <div className="flex justify-center">
+                    <Button
+                      onClick={handleGenerateFresh}
+                      className="bg-blue-600 hover:bg-blue-700 text-white"
+                    >
+                      Generate Fresh Recommendations
+                    </Button>
+                  </div>
                 </div>
-                <Button
-                  onClick={handleGenerateFresh}
-                  className="bg-blue-600 hover:bg-blue-700 text-white"
-                >
-                  Generate Fresh Recommendations
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          </div>
         )}
 
         {/* Disclaimer */}
-        <div className="mb-6 p-4 bg-slate-100 rounded-lg text-sm text-slate-600">
+        <div className="mb-3 p-4 bg-slate-100 rounded-lg text-sm text-slate-600">
           <p>
             <strong>Disclaimer:</strong> These recommendations are based on your provided usage data and preferences. 
             Actual costs may vary. Please verify all details with the supplier before signing up.
@@ -315,7 +354,7 @@ export default function RecommendationsPage() {
         </div>
 
         {/* Actions */}
-        <div className="mb-8 flex gap-4">
+        <div className="mb-2 flex gap-4">
           <Button
             variant="outline"
             onClick={() => router.push('/preferences')}
