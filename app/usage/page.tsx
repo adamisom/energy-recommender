@@ -18,6 +18,7 @@ export default function UsagePage() {
   const [errors, setErrors] = useState<string[]>([]);
   const [savedUsageData, setSavedUsageData] = useState<number[] | null>(null);
   const [loadingSaved, setLoadingSaved] = useState(false);
+  const [uploadedFileName, setUploadedFileName] = useState<string | null>(null);
 
   // Fetch saved usage data if user is logged in
   useEffect(() => {
@@ -48,11 +49,17 @@ export default function UsagePage() {
     newData[index] = value === '' ? '' : parseFloat(value);
     setUsageData(newData);
     setErrors([]);
+    // Clear uploaded filename when manually editing
+    if (uploadedFileName) {
+      setUploadedFileName(null);
+    }
   };
 
   const handleCSVUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
+
+    setUploadedFileName(file.name);
 
     const reader = new FileReader();
     reader.onload = (e) => {
@@ -67,6 +74,7 @@ export default function UsagePage() {
 
         if (values.length < 12) {
           setErrors(['CSV file must contain at least 12 numeric values']);
+          setUploadedFileName(null);
           return;
         }
 
@@ -74,6 +82,7 @@ export default function UsagePage() {
         setErrors([]);
       } catch {
         setErrors(['Failed to parse CSV file. Please ensure it contains 12 comma-separated numbers.']);
+        setUploadedFileName(null);
       }
     };
     reader.readAsText(file);
@@ -104,6 +113,7 @@ export default function UsagePage() {
     if (!savedUsageData) return;
     setUsageData(savedUsageData);
     setErrors([]);
+    setUploadedFileName(null);
   };
 
   const validateAndContinue = async () => {
@@ -235,33 +245,52 @@ export default function UsagePage() {
 
               <TabsContent value="csv">
                 <div className="space-y-4">
-                  <div className="border-2 border-dashed border-slate-300 rounded-lg p-8 text-center">
+                  <div className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
+                    uploadedFileName 
+                      ? 'border-green-400 bg-green-50' 
+                      : 'border-slate-300'
+                  }`}>
                     <Input
                       type="file"
                       accept=".csv,.txt"
                       onChange={handleCSVUpload}
                       className="max-w-sm mx-auto"
                     />
-                    <p className="text-sm text-slate-500 mt-4">
-                      Upload a CSV file with 12 monthly usage values
-                    </p>
-                    <p className="text-sm mt-2">
-                      <a 
-                        href="/example-usage.csv" 
-                        download 
-                        className="text-blue-600 hover:text-blue-700 hover:underline"
-                      >
-                        Download example CSV
-                      </a>
-                    </p>
+                    {uploadedFileName && usageData.some(v => v !== '') ? (
+                      <div className="mt-4">
+                        <div className="inline-flex items-center gap-2 px-4 py-2 bg-green-100 border border-green-300 rounded-lg">
+                          <span className="text-green-700">✅</span>
+                          <span className="text-sm font-semibold text-green-800">
+                            Data loaded successfully!
+                          </span>
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        <p className="text-sm text-slate-500 mt-4">
+                          Upload a CSV file with 12 monthly usage values
+                        </p>
+                        {(typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) && (
+                          <p className="text-sm mt-2">
+                            <a 
+                              href="/example-usage.csv" 
+                              download 
+                              className="text-blue-600 hover:text-blue-700 hover:underline"
+                            >
+                              Download example CSV
+                            </a>
+                          </p>
+                        )}
+                      </>
+                    )}
                   </div>
 
                   {usageData.some(v => v !== '') && (
                     <div className="bg-slate-100 rounded-lg p-4">
                       <h3 className="font-semibold mb-2">Loaded Data:</h3>
-                      <div className="grid grid-cols-4 gap-2 text-sm">
+                      <div className="grid grid-cols-4 gap-x-8 gap-y-2 text-sm">
                         {MONTH_NAMES.map((month, index) => (
-                          <div key={month} className="flex justify-between">
+                          <div key={month} className="flex items-center gap-1">
                             <span className="text-slate-600">{month.slice(0, 3)}:</span>
                             <span className="font-mono">{usageData[index] || '--'}</span>
                           </div>
@@ -294,7 +323,7 @@ export default function UsagePage() {
         </Card>
 
         <div className="mt-6 text-center text-sm text-slate-500">
-          <p>Your data is stored locally and never sent to third parties</p>
+          <p>Your data is stored securely and never sent to third parties</p>
         </div>
       </div>
     </div>
