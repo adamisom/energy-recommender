@@ -53,14 +53,14 @@ npm run dev
 **Step 4: View Recommendations (2 minutes)**
 - [ ] Loading spinner appears
 - [ ] Page loads in < 5 seconds
-- [ ] **3 plan cards** appear
+- [ ] **5 plan cards** appear (top 5 recommendations)
 - [ ] Each card shows:
   - [ ] Plan name and supplier
   - [ ] Annual cost (e.g., "$1,234/yr")
   - [ ] Savings amount (green if positive, red if negative)
   - [ ] 🤖 AI Insight section with explanation
   - [ ] Plan details (rate, contract, renewable %)
-  - [ ] "View Details" and "Sign Up" buttons
+  - [ ] "View Details", "Sign Up", "Favorite", and "Compare" buttons
 - [ ] Click "View Details" on first plan
 
 **Step 5: Plan Details (1 minute)**
@@ -187,24 +187,73 @@ npm run dev
 - [ ] "View Details" button present
 - [ ] "Sign Up for This Plan" button present
 
-#### Test 3.3: Interactions
+#### Test 3.3: Search & Filter Features
+**Search Functionality:**
+- [ ] Search bar visible at top of recommendations
+- [ ] Type "Rhythm" → Filters to plans with "Rhythm" in name or supplier
+- [ ] Type "Green" → Shows plans with "Green" in name or supplier
+- [ ] Clear search → All plans visible again
+- [ ] Search is case-insensitive
+
+**Hide Viewed Plans:**
+- [ ] Checkbox "Hide plans you've clicked View Details on" visible
+- [ ] Click "View Details" on plan #2
+- [ ] Return to recommendations page
+- [ ] Check "Hide viewed plans" checkbox
+- [ ] Plan #2 should disappear from list
+- [ ] Uncheck → Plan #2 reappears
+
+**Favorites/Bookmarks:**
+- [ ] Click "☆ Favorite" on plan #1
+- [ ] Button changes to "⭐ Favorited" (yellow background)
+- [ ] "⭐ View Bookmarks" button appears in search/filter section
+- [ ] Add 4 more favorites (total 5)
+- [ ] Try to add 6th favorite → Shows message: "You can only save up to 5 favorite plans. Please remove one first."
+- [ ] Click "⭐ Favorited" on one plan → Removes from favorites
+- [ ] Can now add another favorite
+
+**Compare Plans:**
+- [ ] Click "Compare" on plan #1 → Button changes to "✓ Selected"
+- [ ] Click "Compare" on plan #2 → Modal automatically opens
+- [ ] Modal shows side-by-side comparison of 2 plans
+- [ ] Close modal
+- [ ] Try to select 3rd plan → Shows message: "You can compare up to 2 plans at a time"
+- [ ] Click "Clear Selection" → Both plans deselected
+
+#### Test 3.4: Interactions
 - [ ] Click "View Details" on plan #1 → Opens `/plan/[id]`
 - [ ] Click "Sign Up" → Modal opens
 - [ ] Modal shows plan name and supplier
 - [ ] Modal shows MVP message
 - [ ] Close modal → Returns to recommendations
 
-#### Test 3.4: Top Navigation
+#### Test 3.5: Top Navigation
 - [ ] Top navigation shows annual usage (e.g., "12,000 kWh")
 - [ ] Shows usage pattern (e.g., "summer peak")
 - [ ] Shows confidence level (high/medium/low)
 
-#### Test 3.5: Bottom Actions
+#### Test 3.6: Bottom Actions
 - [ ] "Try Different Preferences" → Goes to `/preferences`
 - [ ] "Start Over" → Goes to `/usage`
 - [ ] "Start Over" clears sessionStorage (verify by going to preferences - should redirect to usage)
+- [ ] "📜 View History" button always visible (for both logged-in and anonymous users)
 
-#### Test 3.6: Error Scenarios
+#### Test 3.7: Favorites Page
+**Path:** `/recommendations/favorites`
+
+- [ ] Click "⭐ View Bookmarks" button
+- [ ] Favorites page loads
+- [ ] Shows all favorited plans (up to 5)
+- [ ] Each favorite shows:
+  - [ ] Plan name and supplier
+  - [ ] Plan details (rate, contract, renewable, rating, etc.)
+  - [ ] "Remove" button
+  - [ ] "View Details" button
+- [ ] Click "Remove" → Plan removed from favorites
+- [ ] Click "← Back to Recommendations" → Returns to recommendations
+- [ ] If no favorites: Shows "No Favorites Yet!" message
+
+#### Test 3.8: Error Scenarios
 **Test Case: No plans for state**
 - [ ] Go back to preferences
 - [ ] Select a state with 0 plans (if you haven't seeded all states)
@@ -217,7 +266,7 @@ npm run dev
 - [ ] Wait 60 seconds
 - [ ] Should work again
 
-#### Test 3.7: Preference Differentiation
+#### Test 3.9: Preference Differentiation
 **Purpose:** Verify that different preferences produce different top recommendations
 
 **Prerequisites:**
@@ -322,6 +371,11 @@ npm run dev
 - [ ] Data persists during session
 - [ ] Close browser tab → Data lost (expected)
 - [ ] Reopen → Data gone (sessionStorage cleared)
+- [ ] "📜 View History" button is visible
+- [ ] Click "View History" as anonymous user
+- [ ] Shows "Sign In Required" message
+- [ ] Message explains they need to create an account
+- [ ] "Go Back" button returns to recommendations
 
 #### Test 5.2: Sign Up Flow
 - [ ] Click "Sign In" in header
@@ -354,9 +408,15 @@ npm run dev
 - [ ] Enter usage data
 - [ ] Set preferences
 - [ ] Get recommendations
+- [ ] Recommendations automatically saved to database
+- [ ] Click "📜 View History"
+- [ ] History page shows saved recommendations
+- [ ] Can see last 5 recommendation sets
+- [ ] Each set shows preferences used and top 3 plans
 - [ ] Close browser completely
 - [ ] Reopen and sign in
-- [ ] Data will NOT auto-load (see docs/FUTURE_WORK.md #1 - usage data persistence)
+- [ ] Click "View History" → Still shows saved recommendations
+- [ ] Usage data will NOT auto-load (must re-enter)
 
 #### Test 5.5: Sign Out Flow
 - [ ] While signed in, click "Sign Out"
@@ -384,7 +444,7 @@ npm run dev
 4. [ ] Continue to preferences
 5. [ ] Select Texas, Cost priority, 0% renewable min
 6. [ ] Get recommendations
-7. [ ] Verify 3 plans appear
+7. [ ] Verify 5 plans appear
 8. [ ] Verify #1 has lowest cost
 9. [ ] Click "View Details" on plan #2
 10. [ ] Verify details match
@@ -479,7 +539,7 @@ npm run dev
 - [ ] Set max contract: 36 months
 - [ ] Get recommendations
 - [ ] Should return only 100% renewable plans
-- [ ] Should return exactly 3 (or fewer if not enough plans)
+- [ ] Should return up to 5 plans (or fewer if not enough plans)
 
 **Test Case: Very Strict Constraints**
 - [ ] Set min renewable: 100%
@@ -498,7 +558,7 @@ npm run dev
 
 #### Test 7.3: Different States
 **Texas (17 plans):**
-- [ ] Should return 3 recommendations easily
+- [ ] Should return 5 recommendations easily
 - [ ] Good variety of plan types
 
 **Pennsylvania (2 plans):**
@@ -629,6 +689,8 @@ Use these test values:
 - [ ] Plan #1 should have lowest annual cost
 - [ ] Plan #2 should have 2nd lowest
 - [ ] Plan #3 should have 3rd lowest
+- [ ] Plan #4 should have 4th lowest
+- [ ] Plan #5 should have 5th lowest
 
 **Test Case: Renewable Priority**
 - [ ] Select "Renewable Energy" priority
@@ -653,9 +715,9 @@ Use these test values:
 
 #### Test 11.2: Explanation Uniqueness
 - [ ] Get recommendations
-- [ ] All 3 explanations should be different
+- [ ] All 5 explanations should be different
 - [ ] Each should be specific to that plan
-- [ ] Rank should be mentioned (#1, #2, #3)
+- [ ] Rank should be mentioned (#1, #2, #3, #4, #5)
 
 #### Test 11.3: AI Fallback (If API fails)
 **Simulate by using invalid API key:**
