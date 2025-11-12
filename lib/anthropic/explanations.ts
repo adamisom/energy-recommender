@@ -158,9 +158,10 @@ function validateExplanation(explanation: string): boolean {
     'perfect for you',
   ];
   const lowerExplanation = explanation.toLowerCase();
-  const tooGeneric = genericPhrases.every(phrase => !lowerExplanation.includes(phrase));
+  // If explanation contains any generic phrase, it's invalid
+  const containsGenericPhrase = genericPhrases.some(phrase => lowerExplanation.includes(phrase));
   
-  return tooGeneric;
+  return !containsGenericPhrase; // Valid if it doesn't contain generic phrases
 }
 
 /**
