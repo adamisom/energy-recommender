@@ -166,10 +166,10 @@ export default function UsagePage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 py-12 px-4">
+    <div className="min-h-screen bg-slate-50 pt-4 pb-12 px-4">
       <div className="max-w-4xl mx-auto">
-        <div className="mb-8">
-          <h1 className="text-3xl md:text-4xl font-bold text-slate-900 mb-2">
+        <div className="mb-6 text-center">
+          <h1 className="text-2xl md:text-3xl font-bold text-slate-900 mb-2">
             Enter Your Usage Data
           </h1>
           <p className="text-slate-600">
