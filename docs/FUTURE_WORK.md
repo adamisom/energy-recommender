@@ -35,7 +35,7 @@ This document consolidates all post-MVP enhancements, known limitations, and fut
 
 ### 2. Rate Limiting - In-Memory Store Limitation
 
-**Issue:** Current rate limiter uses in-memory Map, won't work in serverless deployment.
+**Issue:** Current rate limiter uses in-memory Map, won't work in **serverless** deployment.
 
 **Current Implementation:**
 ```typescript
@@ -43,11 +43,14 @@ This document consolidates all post-MVP enhancements, known limitations, and fut
 const rateLimitMap = new Map<string, RateLimitRecord>()
 ```
 
-**Problem:** Vercel serverless functions are stateless - each request may hit a different instance.
+**Problem:** Serverless functions (Vercel, Netlify, AWS Lambda) are stateless - each request may hit a different instance, so in-memory state is lost.
 
-**Solution (Post-MVP):**
-- Use Vercel's built-in rate limiting (easiest)
-- OR: Use Redis/Upstash for distributed rate limiting
+**Note:** This is **NOT an issue** if deploying to a persistent server (Railway, Render, Fly.io, self-hosted Node.js) where the server stays running.
+
+**Solution (Post-MVP - only if using serverless):**
+- **Option A:** Deploy to persistent server (Railway, Render, etc.) - current rate limiting works fine
+- **Option B:** Use platform-specific rate limiting (Vercel's built-in, Netlify's, etc.)
+- **Option C:** Use Redis/Upstash for distributed rate limiting (works for any platform)
 
 **References:**
 - `lib/rate-limit.ts` (line comment: "Post-MVP: Replace with Vercel's rate limiting")
@@ -385,8 +388,8 @@ if (cache.size >= MAX_CACHE_SIZE) {
 
 | Item | Decision | Date | Notes |
 |------|----------|------|-------|
-| Usage Data Persistence | TBD | Pending | Need to choose Option A or B (#1) |
-| Rate Limiting | Use Vercel built-in | TBD | Before production deploy (#2) |
+| Usage Data Persistence | Option A - Implemented | Nov 11, 2025 | Auto-fetch, download, pre-fill features added (#1) ✅ |
+| Rate Limiting | Depends on deployment | TBD | Only needed for serverless (#2) |
 | CSV Parser | Keep simple for now | Nov 11, 2025 | Good enough for MVP |
 
 ---
@@ -394,8 +397,8 @@ if (cache.size >= MAX_CACHE_SIZE) {
 ## Priority Matrix
 
 ### Must-Fix Before Production:
-- #2 Rate limiting (distributed store)
-- #1 Usage data persistence (decide & implement OR delete)
+- #2 Rate limiting (only if deploying to serverless - otherwise current implementation works)
+- #1 Usage data persistence (decide & implement OR delete) ✅ COMPLETED
 
 ### High Value, Low Effort:
 - #6 Recommendation history UI

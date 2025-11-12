@@ -65,6 +65,7 @@ npm run build
 
 Comprehensive documentation in `/docs/`:
 - **`DEVELOPER_SETUP.md`** - Complete setup guide with Supabase & API credentials
+- **`DEPLOYMENT_PLAN.md`** - Step-by-step Vercel deployment guide with verification checklist
 - **`MANUAL_TESTING_GUIDE.md`** - Smoke tests and feature testing
 - **`FUTURE_WORK.md`** - Post-MVP enhancements & known limitations (23 items)
 - `Implementation_PRD.md` - Complete implementation guide (3,333 lines)
@@ -118,13 +119,17 @@ npm run seed         # Seed database with plans
 
 ## 🚀 Deployment
 
-Ready for Vercel deployment:
+Ready for Vercel deployment! See **[docs/DEPLOYMENT_PLAN.md](docs/DEPLOYMENT_PLAN.md)** for complete step-by-step instructions including:
+- Pre-deployment checklist
+- Environment variable configuration
+- Deployment steps
+- Post-deployment verification
+- Troubleshooting guide
 
+Quick start:
 ```bash
 vercel --prod
 ```
-
-Set the same environment variables from `.env.local` in your Vercel project settings. See [docs/DEVELOPER_SETUP.md](docs/DEVELOPER_SETUP.md) for deployment details.
 
 ## 📄 License
 
