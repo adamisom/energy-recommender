@@ -17,7 +17,7 @@ jest.mock('@/lib/auth/server', () => ({
   getCurrentUser: jest.fn(),
 }));
 
-const { getCurrentUser } = require('@/lib/auth/server');
+import { getCurrentUser } from '@/lib/auth/server';
 
 describe('Current Plan API', () => {
   beforeEach(() => {

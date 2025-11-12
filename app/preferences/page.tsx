@@ -21,7 +21,10 @@ export default function PreferencesPage() {
   const [minRenewable, setMinRenewable] = useState<number>(DEFAULT_PREFERENCES.minRenewablePct);
   const [maxContract, setMaxContract] = useState<number>(DEFAULT_PREFERENCES.maxContractMonths);
   const [minRating, setMinRating] = useState<number>(DEFAULT_PREFERENCES.minSupplierRating);
-  const [currentPlan, setCurrentPlan] = useState<CurrentPlanData | null>(null);
+  // Initialize current plan from storage
+  const [currentPlan, setCurrentPlan] = useState<CurrentPlanData | null>(() => 
+    safeGetItem<CurrentPlanData | null>(STORAGE_KEYS.CURRENT_PLAN, null)
+  );
   const [showCurrentPlanForm, setShowCurrentPlanForm] = useState(false);
 
   useEffect(() => {
@@ -29,12 +32,7 @@ export default function PreferencesPage() {
     const usageData = safeGetItem(STORAGE_KEYS.USAGE_DATA, null);
     if (!usageData) {
       router.push('/usage');
-    }
-
-    // Load saved current plan if exists
-    const savedCurrentPlan = safeGetItem<CurrentPlanData | null>(STORAGE_KEYS.CURRENT_PLAN, null);
-    if (savedCurrentPlan) {
-      setCurrentPlan(savedCurrentPlan);
+      return;
     }
 
     // If user is logged in, try to fetch current plan from database
