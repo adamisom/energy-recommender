@@ -62,26 +62,52 @@ export default function UsagePage() {
     setUploadedFileName(file.name);
 
     const reader = new FileReader();
-    reader.onload = (e) => {
+    reader.onload = async (e) => {
       try {
         const text = e.target?.result as string;
-        // Simple CSV parsing: expect comma-separated values
-        const values = text.split(/[,\n\r\t]/)
-          .map(v => v.trim())
-          .filter(v => v !== '')
-          .map(v => parseFloat(v))
-          .filter(v => !isNaN(v));
+        
+        // Use papaparse for robust CSV parsing
+        const Papa = (await import('papaparse')).default;
+        
+        // Auto-detect delimiter (comma, tab, etc.)
+        const parseResult = Papa.parse<string[]>(text, {
+          header: false,
+          skipEmptyLines: true,
+          delimiter: '', // Auto-detect delimiter
+          transform: (value: string) => {
+            const trimmed = value.trim();
+            const parsed = parseFloat(trimmed);
+            return isNaN(parsed) ? null : parsed;
+          },
+        });
+
+        // Flatten the parsed data and filter out nulls
+        const values = parseResult.data
+          .flat()
+          .filter((v): v is number => v !== null && typeof v === 'number');
 
         if (values.length < 12) {
-          setErrors(['CSV file must contain at least 12 numeric values']);
+          setErrors([
+            `CSV file must contain at least 12 numeric values. Found ${values.length}.`,
+            'Please ensure your CSV file has 12 comma-separated numbers (one per month).',
+          ]);
           setUploadedFileName(null);
           return;
         }
 
+        if (parseResult.errors.length > 0) {
+          console.warn('CSV parsing warnings:', parseResult.errors);
+        }
+
         setUsageData(values.slice(0, 12));
         setErrors([]);
-      } catch {
-        setErrors(['Failed to parse CSV file. Please ensure it contains 12 comma-separated numbers.']);
+      } catch (error) {
+        console.error('CSV parsing error:', error);
+        setErrors([
+          'Failed to parse CSV file.',
+          'Please ensure it contains 12 comma-separated numbers (one per month).',
+          'Supported formats: plain numbers, or CSV with headers.',
+        ]);
         setUploadedFileName(null);
       }
     };
