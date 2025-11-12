@@ -32,7 +32,7 @@
 - [ ] `KV_REST_API_TOKEN` - Vercel KV REST API token (required if using REST API)
 
 ### Supabase Configuration
-- [ ] Database migrated (`npx prisma migrate deploy` if needed)
+- [ ] Database migrated (see "Database Migrations" section below)
 - [ ] Plan data seeded (`npm run seed` if needed)
 - [ ] If using auth: Site URL and Redirect URLs configured in Supabase dashboard
 
@@ -103,7 +103,40 @@ Follow prompts:
 
 > **Critical:** After adding `NEXT_PUBLIC_*` variables, you **MUST redeploy** because they're baked into the build at build time. Run `vercel --prod` again after adding them.
 
-### 5. Deploy to Production
+### 5. Run Database Migrations (Before First Deploy)
+
+**Important:** If you've made schema changes (like adding the `RecommendationRating` table), run migrations before deploying:
+
+```bash
+# Option 1: Run migration manually with production DATABASE_URL
+# (Set DATABASE_URL to your production database connection string)
+DATABASE_URL="your-production-database-url" npx prisma migrate deploy
+
+# Option 2: Use Vercel CLI to pull production env vars
+vercel env pull .env.production
+npx prisma migrate deploy
+
+# Option 3: Run directly via Vercel CLI
+vercel --prod -- npx prisma migrate deploy
+```
+
+**Key Points:**
+- Use `npx prisma migrate deploy` (NOT `supabase migrate deploy`)
+- This applies existing migration files to production
+- Use `migrate dev` for development (creates migration files)
+- Use `migrate deploy` for production (applies existing migrations)
+- After migration, regenerate Prisma Client: `npx prisma generate`
+
+**Note:** If you're using `prisma db push` in development, you'll need to create a migration first:
+```bash
+# In development, create migration files
+npx prisma migrate dev --name your_migration_name
+
+# Then in production, apply them
+npx prisma migrate deploy
+```
+
+### 6. Deploy to Production
 
 ```bash
 vercel --prod
@@ -115,7 +148,7 @@ This will build and deploy, giving you a production URL.
 - **Inspect:** https://vercel.com/adam-isoms-projects/energy-recommender/2v8wcSeCSMusqJ3Tz8hNyfmH7icD
 - **Production:** https://energy-recommender.vercel.app
 
-### 6. Production URL
+### 7. Production URL
 
 **Production URL:** https://energy-recommender.vercel.app
 
