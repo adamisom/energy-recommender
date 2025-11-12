@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { SignUpModal } from '@/components/shared/sign-up-modal';
 import { safeGetItem, safeClear, STORAGE_KEYS } from '@/lib/utils/storage';
 import { useSaveRecommendation } from '@/lib/hooks/use-hybrid-storage';
+import { useAuth } from '@/lib/auth/context';
 
 interface Recommendation {
   rank: number;
@@ -46,14 +47,41 @@ interface RecommendationResponse {
 
 export default function RecommendationsPage() {
   const router = useRouter();
+  const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [results, setResults] = useState<RecommendationResponse | null>(null);
+  const [loadingMessage, setLoadingMessage] = useState('This may take a few seconds');
+  const [isShowingSaved, setIsShowingSaved] = useState(false);
   const { saveRecommendation, canSave } = useSaveRecommendation();
 
   useEffect(() => {
     async function fetchRecommendations() {
       try {
+        // If user is logged in, try to fetch saved recommendations first
+        if (user) {
+          const savedResponse = await fetch('/api/user/recommendations');
+          if (savedResponse.ok) {
+            const savedData = await savedResponse.json();
+            if (savedData.data && savedData.data.length > 0) {
+              // Use the most recent saved recommendation
+              const mostRecent = savedData.data[0];
+              const savedRec = mostRecent.recommendations as RecommendationResponse;
+              
+              // The saved recommendations field contains the full RecommendationResponse
+              if (savedRec && savedRec.recommendations) {
+                setResults(savedRec);
+                setIsShowingSaved(true);
+                setLoading(false);
+                return;
+              }
+            }
+          }
+        }
+
+        // No saved recommendations or not logged in - generate new ones
+        setIsShowingSaved(false);
+        
         // Get data from sessionStorage
         const monthlyUsageKwh = safeGetItem(STORAGE_KEYS.USAGE_DATA, null);
         const preferences = safeGetItem(STORAGE_KEYS.PREFERENCES, null);
@@ -110,11 +138,86 @@ export default function RecommendationsPage() {
     }
 
     fetchRecommendations();
-  }, [router, saveRecommendation, canSave]);
+  }, [router, saveRecommendation, canSave, user]);
+
+  // Update loading message after 3.5 seconds
+  useEffect(() => {
+    if (loading) {
+      const timer = setTimeout(() => {
+        setLoadingMessage('Still thinking... (just a few more seconds)');
+      }, 3500);
+
+      return () => clearTimeout(timer);
+    } else {
+      // Reset message when loading completes
+      setLoadingMessage('This may take a few seconds');
+    }
+  }, [loading]);
 
   const handleStartOver = () => {
     safeClear();
     router.push('/usage');
+  };
+
+  const handleGenerateFresh = async () => {
+    setIsShowingSaved(false);
+    setLoading(true);
+    setError(null);
+
+    try {
+      // Get data from sessionStorage
+      const monthlyUsageKwh = safeGetItem(STORAGE_KEYS.USAGE_DATA, null);
+      const preferences = safeGetItem(STORAGE_KEYS.PREFERENCES, null);
+      const state = safeGetItem(STORAGE_KEYS.STATE, null);
+
+      if (!monthlyUsageKwh || !preferences) {
+        router.push('/usage');
+        return;
+      }
+
+      // Build request
+      const requestBody = {
+        userId: 'anonymous-user',
+        state: state || undefined,
+        monthlyUsageKwh,
+        preferences,
+      };
+
+      // Call API to generate fresh recommendations
+      const response = await fetch('/api/recommendations', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestBody),
+      });
+
+      if (!response.ok) {
+        if (response.status === 429) {
+          throw new Error('Too many requests. Please wait a moment and try again.');
+        }
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to get recommendations');
+      }
+
+      const data = await response.json();
+      setResults(data);
+
+      // Auto-save recommendation for logged-in users
+      if (canSave && state) {
+        await saveRecommendation(
+          data.recommendations,
+          monthlyUsageKwh,
+          preferences,
+          state
+        );
+      }
+    } catch (err) {
+      console.error('Error fetching recommendations:', err);
+      setError(err instanceof Error ? err.message : 'An error occurred');
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (loading) {
@@ -123,7 +226,7 @@ export default function RecommendationsPage() {
         <div className="text-center">
           <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600 mx-auto mb-4"></div>
           <p className="text-lg text-slate-600">Finding your perfect energy plans...</p>
-          <p className="text-sm text-slate-500 mt-2">This may take a few seconds</p>
+          <p className="text-sm text-slate-500 mt-2">{loadingMessage}</p>
         </div>
       </div>
     );
@@ -177,6 +280,58 @@ export default function RecommendationsPage() {
               🎯 Confidence: {results.metadata.confidence}
             </span>
           </div>
+        </div>
+
+        {/* Saved Recommendations Notice */}
+        {isShowingSaved && (
+          <Card className="mb-6 border-blue-200 bg-blue-50">
+            <CardContent className="pt-6">
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex-1">
+                  <p className="font-semibold text-blue-900 mb-1">
+                    📋 Showing Your Saved Recommendations
+                  </p>
+                  <p className="text-sm text-blue-700">
+                    These are your previously saved recommendations. You can generate fresh recommendations with your current usage data and preferences.
+                  </p>
+                </div>
+                <Button
+                  onClick={handleGenerateFresh}
+                  className="bg-blue-600 hover:bg-blue-700 text-white"
+                >
+                  Generate Fresh Recommendations
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Disclaimer */}
+        <div className="mb-6 p-4 bg-slate-100 rounded-lg text-sm text-slate-600">
+          <p>
+            <strong>Disclaimer:</strong> These recommendations are based on your provided usage data and preferences. 
+            Actual costs may vary. Please verify all details with the supplier before signing up.
+          </p>
+        </div>
+
+        {/* Actions */}
+        <div className="mb-8 flex gap-4">
+          <Button
+            variant="outline"
+            onClick={() => router.push('/preferences')}
+            className="flex-1 text-base py-6 font-semibold border-2 hover:bg-slate-50"
+            size="lg"
+          >
+            Try Different Preferences
+          </Button>
+          <Button
+            variant="outline"
+            onClick={handleStartOver}
+            className="flex-1 text-base py-6 font-semibold border-2 hover:bg-slate-50"
+            size="lg"
+          >
+            Start Over
+          </Button>
         </div>
 
         {/* Recommendations */}
@@ -278,32 +433,6 @@ export default function RecommendationsPage() {
               </CardContent>
             </Card>
           ))}
-        </div>
-
-        {/* Actions */}
-        <div className="flex gap-4">
-          <Button
-            variant="outline"
-            onClick={() => router.push('/preferences')}
-            className="flex-1"
-          >
-            Try Different Preferences
-          </Button>
-          <Button
-            variant="outline"
-            onClick={handleStartOver}
-            className="flex-1"
-          >
-            Start Over
-          </Button>
-        </div>
-
-        {/* Disclaimer */}
-        <div className="mt-8 p-4 bg-slate-100 rounded-lg text-sm text-slate-600">
-          <p>
-            <strong>Disclaimer:</strong> These recommendations are based on your provided usage data and preferences. 
-            Actual costs may vary. Please verify all details with the supplier before signing up.
-          </p>
         </div>
       </div>
     </div>
