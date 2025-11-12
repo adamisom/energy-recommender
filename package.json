@@ -12,7 +12,8 @@
     "seed": "tsx prisma/seed.ts",
     "plans:export": "tsx scripts/manage-plans.ts export",
     "plans:import": "tsx scripts/manage-plans.ts import",
-    "test:recommendations": "tsx scripts/test-recommendations.ts"
+    "test:recommendations": "tsx scripts/test-recommendations.ts",
+    "test:explanations": "tsx scripts/test-explanations.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.68.0",
@@ -27,10 +28,12 @@
     "@radix-ui/react-tabs": "^1.1.13",
     "@supabase/ssr": "^0.7.0",
     "@supabase/supabase-js": "^2.81.1",
+    "@vercel/kv": "^3.0.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "dotenv": "^17.2.3",
     "dotenv-expand": "^12.0.3",
+    "lru-cache": "^11.2.2",
     "lucide-react": "^0.553.0",
     "next": "16.0.1",
     "react": "19.2.0",

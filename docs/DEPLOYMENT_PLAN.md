@@ -26,6 +26,11 @@
 **Optional:**
 - [ ] `ENABLE_SEASONAL_SCORING` - Set to `true` to enable
 
+**For Rate Limiting (Vercel KV):**
+- [ ] `KV_URL` - Vercel KV connection URL (or use `KV_REST_API_URL` + `KV_REST_API_TOKEN`)
+- [ ] `KV_REST_API_URL` - Vercel KV REST API URL (alternative to `KV_URL`)
+- [ ] `KV_REST_API_TOKEN` - Vercel KV REST API token (required if using REST API)
+
 ### Supabase Configuration
 - [ ] Database migrated (`npx prisma migrate deploy` if needed)
 - [ ] Plan data seeded (`npm run seed` if needed)
@@ -81,6 +86,20 @@ Follow prompts:
 **Required for Auth (if using):**
 - `NEXT_PUBLIC_SUPABASE_URL` - Supabase project URL (from Supabase dashboard → Settings → API)
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY` - Supabase anonymous key (from Supabase dashboard → Settings → API)
+
+**For Rate Limiting (Vercel KV):**
+1. Go to [vercel.com/dashboard](https://vercel.com/dashboard)
+2. Click project → **Storage** → **Create Database** → **KV**
+3. Choose a name (e.g., `energy-recommender-kv`)
+4. Select region closest to your users
+5. After creation, go to **Settings** → **Environment Variables**
+6. Vercel automatically adds:
+   - `KV_URL` - Connection URL
+   - `KV_REST_API_URL` - REST API URL
+   - `KV_REST_API_TOKEN` - REST API token
+7. Verify these are set for Production, Preview, and Development environments
+
+> **Note:** Rate limiting will fall back to in-memory (local dev) if KV is not configured. For production, Vercel KV is required for distributed rate limiting across serverless instances.
 
 > **Critical:** After adding `NEXT_PUBLIC_*` variables, you **MUST redeploy** because they're baked into the build at build time. Run `vercel --prod` again after adding them.
 
