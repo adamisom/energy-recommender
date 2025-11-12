@@ -80,7 +80,7 @@ describe('POST /api/user/recommendations - Deduplication', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    mockCreateClient.mockResolvedValue(mockSupabase as any);
+    mockCreateClient.mockResolvedValue(mockSupabase as unknown as Awaited<ReturnType<typeof createClient>>);
     mockPrisma.user.findUnique.mockResolvedValue(mockUser);
   });
 
@@ -98,11 +98,11 @@ describe('POST /api/user/recommendations - Deduplication', () => {
       userId: mockUser.id,
       ...sampleRecommendation,
       createdAt: new Date(),
-    } as any);
+    } as unknown as Awaited<ReturnType<typeof mockPrisma.savedRecommendation.create>>);
     // After save, still only 1 recommendation
     mockPrisma.savedRecommendation.findMany.mockResolvedValueOnce([
       { id: 'rec-1', userId: mockUser.id },
-    ] as any);
+    ] as unknown as Awaited<ReturnType<typeof mockPrisma.savedRecommendation.findMany>>);
 
     const request = createRequest(sampleRecommendation);
     const response = await POST(request);
@@ -139,7 +139,7 @@ describe('POST /api/user/recommendations - Deduplication', () => {
     mockPrisma.savedRecommendation.findMany.mockResolvedValueOnce([
       duplicateRec1,
       duplicateRec2,
-    ] as any);
+    ] as unknown as Awaited<ReturnType<typeof mockPrisma.savedRecommendation.findMany>>);
 
     // Mock deleteMany for duplicates
     mockPrisma.savedRecommendation.deleteMany.mockResolvedValueOnce({ count: 2 });
@@ -150,12 +150,12 @@ describe('POST /api/user/recommendations - Deduplication', () => {
       userId: mockUser.id,
       ...sampleRecommendation,
       createdAt: new Date(),
-    } as any);
+    } as unknown as Awaited<ReturnType<typeof mockPrisma.savedRecommendation.create>>);
 
     // After save, only the new one exists
     mockPrisma.savedRecommendation.findMany.mockResolvedValueOnce([
       { id: 'rec-new', userId: mockUser.id },
-    ] as any);
+    ] as unknown as Awaited<ReturnType<typeof mockPrisma.savedRecommendation.findMany>>);
 
     const request = createRequest(sampleRecommendation);
     const response = await POST(request);
@@ -218,14 +218,14 @@ describe('POST /api/user/recommendations - Deduplication', () => {
       nonDuplicate1,
       nonDuplicate2,
       nonDuplicate3,
-    ] as any);
+    ] as unknown as Awaited<ReturnType<typeof mockPrisma.savedRecommendation.findMany>>);
 
     mockPrisma.savedRecommendation.create.mockResolvedValueOnce({
       id: 'rec-new',
       userId: mockUser.id,
       ...sampleRecommendation,
       createdAt: new Date(),
-    } as any);
+    } as unknown as Awaited<ReturnType<typeof mockPrisma.savedRecommendation.create>>);
 
     // After save, all 4 recommendations exist
     mockPrisma.savedRecommendation.findMany.mockResolvedValueOnce([
@@ -233,7 +233,7 @@ describe('POST /api/user/recommendations - Deduplication', () => {
       nonDuplicate1,
       nonDuplicate2,
       nonDuplicate3,
-    ] as any);
+    ] as unknown as Awaited<ReturnType<typeof mockPrisma.savedRecommendation.findMany>>);
 
     const request = createRequest(sampleRecommendation);
     const response = await POST(request);
@@ -256,14 +256,14 @@ describe('POST /api/user/recommendations - Deduplication', () => {
     }));
 
     // No duplicates
-    mockPrisma.savedRecommendation.findMany.mockResolvedValueOnce(existingRecs as any);
+    mockPrisma.savedRecommendation.findMany.mockResolvedValueOnce(existingRecs as unknown as Awaited<ReturnType<typeof mockPrisma.savedRecommendation.findMany>>);
 
     mockPrisma.savedRecommendation.create.mockResolvedValueOnce({
       id: 'rec-new',
       userId: mockUser.id,
       ...sampleRecommendation,
       createdAt: new Date('2024-01-06'),
-    } as any);
+    } as unknown as Awaited<ReturnType<typeof mockPrisma.savedRecommendation.create>>);
 
     // After save, we have 6 recommendations (5 existing + 1 new)
     // When ordered by createdAt desc: rec-new (Jan 6), rec-5 (Jan 5), rec-4 (Jan 4), rec-3 (Jan 3), rec-2 (Jan 2), rec-1 (Jan 1)
@@ -273,7 +273,7 @@ describe('POST /api/user/recommendations - Deduplication', () => {
       { id: 'rec-new', createdAt: new Date('2024-01-06') },
       ...existingRecs.reverse(), // Reverse to match desc order (newest first)
     ];
-    mockPrisma.savedRecommendation.findMany.mockResolvedValueOnce(allRecsAfterSave as any);
+    mockPrisma.savedRecommendation.findMany.mockResolvedValueOnce(allRecsAfterSave as unknown as Awaited<ReturnType<typeof mockPrisma.savedRecommendation.findMany>>);
 
     // Mock deleteMany for oldest (rec-1, which is oldest)
     // No duplicates, so deleteMany only called once for the limit
@@ -306,14 +306,14 @@ describe('POST /api/user/recommendations - Deduplication', () => {
     }));
 
     // No duplicates
-    mockPrisma.savedRecommendation.findMany.mockResolvedValueOnce(existingRecs as any);
+    mockPrisma.savedRecommendation.findMany.mockResolvedValueOnce(existingRecs as unknown as Awaited<ReturnType<typeof mockPrisma.savedRecommendation.findMany>>);
 
     mockPrisma.savedRecommendation.create.mockResolvedValueOnce({
       id: 'rec-new',
       userId: mockUser.id,
       ...sampleRecommendation,
       createdAt: new Date('2024-01-08'),
-    } as any);
+    } as unknown as Awaited<ReturnType<typeof mockPrisma.savedRecommendation.create>>);
 
     // After save, we have 8 recommendations (7 existing + 1 new)
     // When ordered by createdAt desc, newest first: rec-new, rec-7, rec-6, rec-5, rec-4, rec-3, rec-2, rec-1
@@ -323,7 +323,7 @@ describe('POST /api/user/recommendations - Deduplication', () => {
       { id: 'rec-new', createdAt: new Date('2024-01-08') },
       ...existingRecs.reverse(), // Reverse to match desc order (newest first)
     ];
-    mockPrisma.savedRecommendation.findMany.mockResolvedValueOnce(allRecsAfterSave as any);
+    mockPrisma.savedRecommendation.findMany.mockResolvedValueOnce(allRecsAfterSave as unknown as Awaited<ReturnType<typeof mockPrisma.savedRecommendation.findMany>>);
 
     // Should delete the 3 oldest (rec-1, rec-2, rec-3)
     // No duplicates, so deleteMany only called once for the limit
@@ -369,7 +369,7 @@ describe('POST /api/user/recommendations - Deduplication', () => {
     ];
 
     // First call: check for duplicates
-    mockPrisma.savedRecommendation.findMany.mockResolvedValueOnce(existingRecs as any);
+    mockPrisma.savedRecommendation.findMany.mockResolvedValueOnce(existingRecs as unknown as Awaited<ReturnType<typeof mockPrisma.savedRecommendation.findMany>>);
     // Delete duplicate
     mockPrisma.savedRecommendation.deleteMany.mockResolvedValueOnce({ count: 1 });
 
@@ -378,14 +378,14 @@ describe('POST /api/user/recommendations - Deduplication', () => {
       userId: mockUser.id,
       ...sampleRecommendation,
       createdAt: new Date('2024-01-06'),
-    } as any);
+    } as unknown as Awaited<ReturnType<typeof mockPrisma.savedRecommendation.create>>);
 
     // After save, we have 5 recommendations (4 non-duplicates + 1 new)
     const allRecsAfterSave = [
       { id: 'rec-new', createdAt: new Date('2024-01-06') },
       ...existingRecs.slice(1), // Exclude duplicate
     ];
-    mockPrisma.savedRecommendation.findMany.mockResolvedValueOnce(allRecsAfterSave as any);
+    mockPrisma.savedRecommendation.findMany.mockResolvedValueOnce(allRecsAfterSave as unknown as Awaited<ReturnType<typeof mockPrisma.savedRecommendation.findMany>>);
 
     const request = createRequest(sampleRecommendation);
     const response = await POST(request);
@@ -411,10 +411,10 @@ describe('POST /api/user/recommendations - Deduplication', () => {
       userId: mockUser.id,
       ...sampleRecommendation,
       createdAt: new Date(),
-    } as any);
+    } as unknown as Awaited<ReturnType<typeof mockPrisma.savedRecommendation.create>>);
     mockPrisma.savedRecommendation.findMany.mockResolvedValueOnce([
       { id: 'rec-1', userId: mockUser.id },
-    ] as any);
+    ] as unknown as Awaited<ReturnType<typeof mockPrisma.savedRecommendation.findMany>>);
 
     const request = createRequest(sampleRecommendation);
     const response = await POST(request);

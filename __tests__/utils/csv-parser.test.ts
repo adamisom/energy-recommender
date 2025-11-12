@@ -67,14 +67,13 @@ describe('CSV Parser', () => {
 
   test('should handle tab-separated values', () => {
     const csv = '1000\t1100\t1200\t1300\t1400\t1500\t1600\t1700\t1800\t1900\t2000\t2100';
-    const result = parseCSV(csv);
     
     // papaparse can handle tabs when configured, but by default expects commas
     // For this test, we'll use a format papaparse handles well
     const csvWithTabs = Papa.parse(csv, { delimiter: '\t', header: false, skipEmptyLines: true });
     const tabValues = csvWithTabs.data
       .flat()
-      .map((v: any) => parseFloat(String(v).trim()))
+      .map((v: unknown) => parseFloat(String(v).trim()))
       .filter((v: number) => !isNaN(v));
     
     expect(tabValues.length).toBeGreaterThanOrEqual(12);

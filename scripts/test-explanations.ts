@@ -19,7 +19,7 @@ import { generateExplanation } from '@/lib/anthropic/explanations';
 import { analyzeUsage } from '@/lib/scoring/usage-analysis';
 import { calculatePlanCost } from '@/lib/scoring/cost-calculator';
 import { prisma } from '@/lib/database/client';
-import { Plan, UsageAnalysis, CostBreakdown, UserPreferences } from '@/types';
+import { Plan, UserPreferences } from '@/types';
 
 async function testExplanations() {
   console.log('🧪 Testing LLM Explanation Feature\n');

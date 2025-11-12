@@ -116,19 +116,6 @@ async function testRecommendations() {
       calculatePlanCost(plan as Plan, SAMPLE_USAGE, 0)
     );
 
-    // Score all plans
-    const scoredPlans: ScoredPlan[] = allPlans.map((plan, index) => {
-      const cost = allCosts[index];
-      const score = scorePlan(
-        plan as Plan,
-        cost,
-        allCosts,
-        { priority: 'balanced', minRenewablePct: 0, maxContractMonths: 24, minSupplierRating: 3.0 },
-        usageAnalysis.pattern
-      );
-      return { plan: plan as Plan, cost, score };
-    });
-
     // Test each preference set
     for (const testCase of testCases) {
       console.log(`\n${'─'.repeat(80)}`);

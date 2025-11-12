@@ -8,7 +8,6 @@ import { LRUCache } from 'lru-cache';
 const explanationCache = new LRUCache<string, string>({
   max: CACHE_SETTINGS.MAX_EXPLANATION_CACHE_SIZE,
 });
-const MAX_CACHE_SIZE = CACHE_SETTINGS.MAX_EXPLANATION_CACHE_SIZE;
 
 interface ExplanationContext {
   plan: Plan;
