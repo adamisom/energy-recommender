@@ -86,6 +86,24 @@ If you want to enable user authentication:
 
 > **Note:** The app works perfectly fine **without** auth (anonymous mode). You can skip the API keys if you just want to test the recommendation engine.
 
+### 2.4 Configure Authentication Settings (Optional - for Auth)
+
+If you're using authentication, configure these settings in your Supabase dashboard:
+
+1. Go to **Authentication** → **URL Configuration**
+2. Set **Site URL** to: `http://localhost:3000`
+3. Add **Redirect URLs**:
+   - `http://localhost:3000/**` (for development)
+   - Add your production URL when deploying (e.g., `https://yourdomain.com/**`)
+
+**Development Tip:** For easier testing during development, you can disable email confirmation:
+
+1. Go to **Authentication** → **Settings** → **Email Auth**
+2. Toggle **"Enable email confirmations"** to **OFF**
+3. This allows users to sign up and immediately sign in without checking their email
+
+> **Note:** Keep email confirmations **ON** in production for security. Only disable for local development.
+
 ---
 
 ## Step 3: Get Anthropic API Key
