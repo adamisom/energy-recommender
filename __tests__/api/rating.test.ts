@@ -1,3 +1,15 @@
+// Mock NextResponse
+jest.mock('next/server', () => ({
+  NextRequest: jest.fn(),
+  NextResponse: {
+    json: jest.fn((data, init) => ({
+      json: async () => data,
+      status: init?.status || 200,
+      headers: init?.headers || {},
+    })),
+  },
+}));
+
 import { POST } from '@/app/api/recommendations/rate/route';
 import { NextRequest } from 'next/server';
 import { prisma } from '@/lib/database/client';
@@ -37,23 +49,25 @@ describe('Rating API', () => {
       updatedAt: new Date(),
     });
 
-    const request = new NextRequest('http://localhost/api/recommendations/rate', {
-      method: 'POST',
-      body: JSON.stringify({
+    const request = {
+      json: async () => ({
         planId: 'plan-1',
         rank: 1,
         rating: 5,
         ratingType: 'star',
         sessionId: 'session-123',
       }),
-    });
+      headers: {
+        get: jest.fn(() => null),
+      },
+    } as unknown as NextRequest;
 
     const response = await POST(request);
     const data = await response.json();
 
     expect(response.status).toBe(200);
     expect(data.success).toBe(true);
-    expect(prisma.recommendationRating.create).toHaveBeenCalledWith({
+      expect(prisma.recommendationRating.create).toHaveBeenCalledWith({
       data: expect.objectContaining({
         planId: 'plan-1',
         rank: 1,
@@ -80,16 +94,18 @@ describe('Rating API', () => {
       updatedAt: new Date(),
     });
 
-    const request = new NextRequest('http://localhost/api/recommendations/rate', {
-      method: 'POST',
-      body: JSON.stringify({
+    const request = {
+      json: async () => ({
         planId: 'plan-2',
         rank: 2,
         rating: 1,
         ratingType: 'thumbs',
         sessionId: 'session-123',
       }),
-    });
+      headers: {
+        get: jest.fn(() => null),
+      },
+    } as unknown as NextRequest;
 
     const response = await POST(request);
     expect(response.status).toBe(200);
@@ -111,9 +127,8 @@ describe('Rating API', () => {
       updatedAt: new Date(),
     });
 
-    const request = new NextRequest('http://localhost/api/recommendations/rate', {
-      method: 'POST',
-      body: JSON.stringify({
+    const request = {
+      json: async () => ({
         planId: 'plan-3',
         rank: 3,
         rating: -1,
@@ -121,7 +136,10 @@ describe('Rating API', () => {
         feedback: 'Could be better',
         sessionId: 'session-123',
       }),
-    });
+      headers: {
+        get: jest.fn(() => null),
+      },
+    } as unknown as NextRequest;
 
     const response = await POST(request);
     expect(response.status).toBe(200);
@@ -133,13 +151,15 @@ describe('Rating API', () => {
   });
 
   it('should return 400 for invalid rating data', async () => {
-    const request = new NextRequest('http://localhost/api/recommendations/rate', {
-      method: 'POST',
-      body: JSON.stringify({
+    const request = {
+      json: async () => ({
         // Missing required fields
         planId: 'plan-1',
       }),
-    });
+      headers: {
+        get: jest.fn(() => null),
+      },
+    } as unknown as NextRequest;
 
     const response = await POST(request);
     expect(response.status).toBe(400);

@@ -19,14 +19,14 @@ describe('Cost Calculator - Savings Calculation', () => {
     updatedAt: new Date(),
   };
 
-  const monthlyUsage = [800, 750, 700, 650, 600, 900, 1000, 1100, 950, 850, 750, 800]; // 10,000 kWh/year
+  const monthlyUsage = [800, 750, 700, 650, 600, 900, 1000, 1100, 950, 850, 750, 800]; // 9,850 kWh/year
 
   it('should calculate cost correctly for fixed rate plan', () => {
     const cost = calculatePlanCost(mockPlan, monthlyUsage, 0);
     
-    expect(cost.energyCharges).toBe(1000); // 10,000 kWh * $0.10
+    expect(cost.energyCharges).toBe(985); // 9,850 kWh * $0.10
     expect(cost.monthlyFees).toBe(60); // $5 * 12 months
-    expect(cost.firstYearTotal).toBe(1060);
+    expect(cost.firstYearTotal).toBe(1045);
     expect(cost.switchingCost).toBe(0);
   });
 
@@ -34,7 +34,7 @@ describe('Cost Calculator - Savings Calculation', () => {
     const cost = calculatePlanCost(mockPlan, monthlyUsage, 150);
     
     expect(cost.switchingCost).toBe(150);
-    expect(cost.firstYearTotal).toBe(1210); // 1060 + 150
+    expect(cost.firstYearTotal).toBe(1195); // 1045 + 150
   });
 
   it('should calculate savings when current plan is more expensive', () => {
@@ -42,7 +42,7 @@ describe('Cost Calculator - Savings Calculation', () => {
     const newPlanCost = calculatePlanCost(mockPlan, monthlyUsage, 0).firstYearTotal;
     const savings = currentPlanCost - newPlanCost;
     
-    expect(savings).toBe(140); // $1200 - $1060
+    expect(savings).toBe(155); // $1200 - $1045
   });
 
   it('should handle TOU rate plans', () => {
@@ -56,8 +56,9 @@ describe('Cost Calculator - Savings Calculation', () => {
     const cost = calculatePlanCost(touPlan, monthlyUsage, 0);
     
     // 40% on-peak, 60% off-peak
-    const onPeakKwh = 10000 * 0.4;
-    const offPeakKwh = 10000 * 0.6;
+    const totalKwh = 9850; // Sum of monthlyUsage
+    const onPeakKwh = totalKwh * 0.4;
+    const offPeakKwh = totalKwh * 0.6;
     const expectedEnergy = (onPeakKwh * 0.15) + (offPeakKwh * 0.08);
     
     expect(cost.energyCharges).toBeCloseTo(expectedEnergy, 2);
@@ -72,7 +73,7 @@ describe('Cost Calculator - Savings Calculation', () => {
     const cost = calculatePlanCost(variablePlan, monthlyUsage, 0);
     
     // Variable rate uses current rate as estimate
-    expect(cost.energyCharges).toBe(1000);
+    expect(cost.energyCharges).toBe(985); // 9,850 kWh * $0.10
   });
 });
 

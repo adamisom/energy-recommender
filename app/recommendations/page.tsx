@@ -445,6 +445,33 @@ export default function RecommendationsPage() {
           </div>
         )}
 
+        {/* Limited Plans Warning */}
+        {results.recommendations.length < 5 && (
+          <Card className="mb-6 border-2 border-yellow-300 bg-yellow-50">
+            <CardContent className="pt-6">
+              <div className="flex items-start gap-3">
+                <span className="text-2xl" aria-hidden="true">⚠️</span>
+                <div className="flex-1">
+                  <h3 className="font-bold text-yellow-900 mb-2">
+                    Limited Plans Available
+                  </h3>
+                  <p className="text-yellow-800 mb-3">
+                    Only {results.recommendations.length} plan{results.recommendations.length !== 1 ? 's' : ''} match your preferences. 
+                    Consider relaxing your filters (renewable energy percentage, contract length, or supplier rating) to see more options.
+                  </p>
+                  <Button
+                    variant="outline"
+                    onClick={() => router.push('/preferences')}
+                    className="min-h-[44px] text-base border-yellow-300 text-yellow-900 hover:bg-yellow-100"
+                  >
+                    Adjust Preferences
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Uncertainty Banner */}
         <UncertaintyBanner 
           confidence={results.metadata.confidence}

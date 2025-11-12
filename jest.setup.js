@@ -31,3 +31,11 @@ if (typeof global.Response === 'undefined') {
   };
 }
 
+// Mock next/headers cookies for NextRequest
+jest.mock('next/headers', () => ({
+  cookies: jest.fn(async () => ({
+    get: jest.fn(() => undefined),
+    set: jest.fn(),
+  })),
+}));
+

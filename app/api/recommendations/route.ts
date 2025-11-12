@@ -164,14 +164,8 @@ export async function POST(request: NextRequest) {
     // 8. Filter and rank to get top 5
     const topFive = filterAndRankPlans(scoredPlans, validatedData.preferences);
 
-    if (topFive.length === 0) {
-      return NextResponse.json(
-        {
-          error: 'No plans match your criteria. Please try relaxing your preferences.',
-        },
-        { status: 404 }
-      );
-    }
+    // Don't error if < 5 plans - just return what we have
+    // The UI will show a call-out box to inform the user
 
     // 9. Generate AI explanations in parallel
     const explanations = await generateAllExplanations(

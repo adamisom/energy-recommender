@@ -1,3 +1,15 @@
+// Mock NextResponse
+jest.mock('next/server', () => ({
+  NextRequest: jest.fn(),
+  NextResponse: {
+    json: jest.fn((data, init) => ({
+      json: async () => data,
+      status: init?.status || 200,
+      headers: init?.headers || {},
+    })),
+  },
+}));
+
 import { POST, GET } from '@/app/api/user/current-plan/route';
 import { NextRequest } from 'next/server';
 import { prisma } from '@/lib/database/client';
@@ -46,9 +58,8 @@ describe('Current Plan API', () => {
         updatedAt: new Date(),
       });
 
-      const request = new NextRequest('http://localhost/api/user/current-plan', {
-        method: 'POST',
-        body: JSON.stringify({
+      const request = {
+        json: async () => ({
           supplierName: 'Test Supplier',
           planName: 'Test Plan',
           ratePerKwh: 0.12,
@@ -59,7 +70,10 @@ describe('Current Plan API', () => {
           contractLengthMonths: 12,
           earlyTerminationFee: 100,
         }),
-      });
+        headers: {
+          get: jest.fn(() => null),
+        },
+      } as unknown as NextRequest;
 
       const response = await POST(request);
       const data = await response.json();
@@ -82,10 +96,12 @@ describe('Current Plan API', () => {
     it('should return 401 for unauthenticated user', async () => {
       getCurrentUser.mockResolvedValue(null);
 
-      const request = new NextRequest('http://localhost/api/user/current-plan', {
-        method: 'POST',
-        body: JSON.stringify({}),
-      });
+      const request = {
+        json: async () => ({}),
+        headers: {
+          get: jest.fn(() => null),
+        },
+      } as unknown as NextRequest;
 
       const response = await POST(request);
       expect(response.status).toBe(401);
@@ -114,9 +130,11 @@ describe('Current Plan API', () => {
         updatedAt: new Date(),
       });
 
-      const request = new NextRequest('http://localhost/api/user/current-plan', {
-        method: 'GET',
-      });
+      const request = {
+        headers: {
+          get: jest.fn(() => null),
+        },
+      } as unknown as NextRequest;
 
       const response = await GET(request);
       const data = await response.json();
@@ -131,9 +149,11 @@ describe('Current Plan API', () => {
       getCurrentUser.mockResolvedValue({ id: 'user-123' });
       prisma.userCurrentPlan.findUnique.mockResolvedValue(null);
 
-      const request = new NextRequest('http://localhost/api/user/current-plan', {
-        method: 'GET',
-      });
+      const request = {
+        headers: {
+          get: jest.fn(() => null),
+        },
+      } as unknown as NextRequest;
 
       const response = await GET(request);
       const data = await response.json();
