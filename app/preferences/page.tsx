@@ -223,14 +223,14 @@ export default function PreferencesPage() {
             <Button
               variant="outline"
               onClick={() => router.back()}
-              className="flex-1"
+              className="flex-1 min-h-[44px] text-base"
             >
               Back
             </Button>
             <Button
               onClick={handleSubmit}
               size="lg"
-              className="flex-1"
+              className="flex-1 min-h-[44px] text-base"
             >
               Get Recommendations
             </Button>

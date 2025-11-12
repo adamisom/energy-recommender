@@ -70,3 +70,33 @@ model SavedRecommendation {
 
   @@index([userId, createdAt])
 }
+
+model RecommendationRating {
+  id              String   @id @default(cuid())
+  
+  // User identification (anonymous or authenticated)
+  userId          String?  // null for anonymous users
+  sessionId       String?  // For anonymous users
+  
+  // Recommendation details
+  recommendationId String  // ID of the recommendation (can be plan ID or custom)
+  planId          String   // Plan that was rated
+  rank            Int      // Rank of the recommendation (1-5)
+  
+  // Rating
+  rating          Int      // 1-5 stars, or -1 (thumbs down), 1 (thumbs up)
+  ratingType      String   // 'star' | 'thumbs'
+  
+  // Optional feedback
+  feedback        String?  // Optional text feedback
+  helpful         Boolean? // Was this recommendation helpful?
+  
+  // Metadata
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([planId])
+  @@index([userId])
+  @@index([sessionId])
+  @@index([createdAt])
+}

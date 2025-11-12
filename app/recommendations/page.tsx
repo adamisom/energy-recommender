@@ -9,6 +9,8 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { SignUpModal } from '@/components/shared/sign-up-modal';
 import { ComparePlansDialog } from '@/components/recommendations/compare-plans-dialog';
+import { UncertaintyBanner } from '@/components/recommendations/uncertainty-banner';
+import { RatingWidget } from '@/components/recommendations/rating-widget';
 import { safeGetItem, safeClear, STORAGE_KEYS, getViewedPlans, addViewedPlan, getFavoritePlans, addFavoritePlan, removeFavoritePlan, isFavoritePlan } from '@/lib/utils/storage';
 import { useSaveRecommendation } from '@/lib/hooks/use-hybrid-storage';
 import { useAuth } from '@/lib/auth/context';
@@ -350,6 +352,25 @@ export default function RecommendationsPage() {
     return null;
   }
 
+  // Determine uncertainty reasons
+  const uncertaintyReasons: string[] = [];
+  const monthlyUsageKwh = safeGetItem(STORAGE_KEYS.USAGE_DATA, null) as number[] | null;
+  
+  if (results.metadata.confidence === 'low' || results.metadata.confidence === 'medium') {
+    if (monthlyUsageKwh) {
+      const missingMonths = monthlyUsageKwh.filter(v => !v || v === 0).length;
+      if (missingMonths > 3) {
+        uncertaintyReasons.push(`${missingMonths} months of usage data are missing`);
+      }
+    }
+    if (results.recommendations.length < 5) {
+      uncertaintyReasons.push('Limited number of matching plans available');
+    }
+    if (results.metadata.usagePattern === 'variable') {
+      uncertaintyReasons.push('Usage pattern is highly variable, making predictions less reliable');
+    }
+  }
+
   return (
     <div className="min-h-screen bg-slate-50 pt-4 pb-12 px-4">
       <div className="max-w-6xl mx-auto">
@@ -393,6 +414,12 @@ export default function RecommendationsPage() {
             </Card>
           </div>
         )}
+
+        {/* Uncertainty Banner */}
+        <UncertaintyBanner 
+          confidence={results.metadata.confidence}
+          reasons={uncertaintyReasons}
+        />
 
         {/* Disclaimer */}
         <div className="mb-3 p-4 bg-slate-100 rounded-lg text-sm text-slate-600">
@@ -611,7 +638,7 @@ export default function RecommendationsPage() {
                 <div className="space-y-3 pt-2">
                   <div className="flex gap-3">
                     <Link href={`/plan/${rec.plan.id}`} className="flex-1" onClick={() => handleViewDetails(rec.plan.id)}>
-                      <Button variant="outline" className="w-full">
+                      <Button variant="outline" className="w-full min-h-[44px] text-base">
                         View Details
                       </Button>
                     </Link>
@@ -628,7 +655,7 @@ export default function RecommendationsPage() {
                       variant="outline"
                       size="sm"
                       onClick={() => handleToggleFavorite(rec.plan.id)}
-                      className={isFavoritePlan(rec.plan.id) ? 'bg-yellow-50 border-yellow-300' : ''}
+                      className={`min-h-[44px] text-base ${isFavoritePlan(rec.plan.id) ? 'bg-yellow-50 border-yellow-300' : ''}`}
                     >
                       {isFavoritePlan(rec.plan.id) ? '⭐ Favorited' : '☆ Favorite'}
                     </Button>
@@ -638,10 +665,18 @@ export default function RecommendationsPage() {
                       variant="outline"
                       size="sm"
                       onClick={() => handleToggleCompare(rec.plan.id)}
-                      className={selectedForCompare.has(rec.plan.id) ? 'bg-blue-50 border-blue-300' : ''}
+                      className={`min-h-[44px] text-base ${selectedForCompare.has(rec.plan.id) ? 'bg-blue-50 border-blue-300' : ''}`}
                     >
                       {selectedForCompare.has(rec.plan.id) ? '✓ Selected' : 'Compare'}
                     </Button>
+                  </div>
+                  
+                  {/* Rating Widget */}
+                  <div className="mt-4 pt-4 border-t">
+                    <RatingWidget
+                      planId={rec.plan.id}
+                      rank={rec.rank}
+                    />
                   </div>
                 </div>
               </CardContent>

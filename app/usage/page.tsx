@@ -10,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { safeSetItem, STORAGE_KEYS } from '@/lib/utils/storage';
 import { MONTH_NAMES, VALIDATION_LIMITS } from '@/lib/constants';
 import { useAuth } from '@/lib/auth/context';
+import { DataQualityIndicator } from '@/components/usage/data-quality-indicator';
 
 export default function UsagePage() {
   const router = useRouter();
@@ -242,6 +243,9 @@ export default function UsagePage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
+            {/* Data Quality Indicator */}
+            <DataQualityIndicator monthlyUsage={usageData} />
+            
             <Tabs defaultValue="manual" className="w-full">
               <TabsList className="grid w-full grid-cols-2 mb-6">
                 <TabsTrigger value="manual">Manual Entry</TabsTrigger>
@@ -256,12 +260,14 @@ export default function UsagePage() {
                       <Input
                         id={`month-${index}`}
                         type="number"
+                        inputMode="numeric"
                         placeholder="e.g., 850"
                         min="0"
                         step="1"
                         value={usageData[index] === '' ? '' : usageData[index]}
                         onChange={(e) => handleManualChange(index, e.target.value)}
-                        className="mt-1"
+                        className="mt-1 text-base"
+                        aria-label={`${month} usage in kilowatt-hours`}
                       />
                     </div>
                   ))}
@@ -339,7 +345,7 @@ export default function UsagePage() {
               <Button
                 onClick={validateAndContinue}
                 size="lg"
-                className="flex-1"
+                className="flex-1 min-h-[44px] text-base"
               >
                 Continue to Preferences
               </Button>

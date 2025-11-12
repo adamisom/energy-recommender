@@ -157,7 +157,11 @@ export async function POST(request: NextRequest) {
     }));
 
     // Determine confidence level
-    const confidence = determineConfidence(topFive);
+    const confidence = determineConfidence(
+      topFive,
+      validatedData.monthlyUsageKwh,
+      usageAnalysis
+    );
 
     const response: RecommendationResponse = {
       recommendations,
@@ -200,25 +204,43 @@ export async function POST(request: NextRequest) {
 }
 
 /**
- * Determine confidence level based on results
+ * Determine confidence level based on results and data quality
  */
 function determineConfidence(
-  topFive: ScoredPlan[]
+  topFive: ScoredPlan[],
+  usageData: number[],
+  usageAnalysis: { pattern: string; totalAnnualKwh: number }
 ): 'high' | 'medium' | 'low' {
+  let confidence: 'high' | 'medium' | 'low' = 'medium';
+  
+  // Check data completeness
+  const missingMonths = usageData.filter(v => v === 0 || !v).length;
+  if (missingMonths > 3) {
+    confidence = 'low';
+  }
+  
+  // Check usage pattern clarity
+  if (usageAnalysis.pattern === 'variable') {
+    confidence = confidence === 'low' ? 'low' : 'medium';
+  }
+  
+  // Check if we have enough plans to compare
   if (topFive.length < 5) {
-    return 'low'; // Not enough plans to choose from
-  }
-
-  // Check score spread
-  const scores = topFive.map(p => p.score.finalScore);
-  const scoreDiff = scores[0] - scores[4];
-
-  if (scoreDiff > 20) {
-    return 'high'; // Clear winner
-  } else if (scoreDiff > 10) {
-    return 'medium'; // Some differentiation
+    confidence = 'low';
   } else {
-    return 'low'; // Very close scores
+    // Check score spread
+    const scores = topFive.map(p => p.score.finalScore);
+    const scoreDiff = scores[0] - scores[4];
+    
+    if (scoreDiff < 5) {
+      confidence = 'low'; // Very close scores = uncertain
+    } else if (scoreDiff < 15) {
+      confidence = confidence === 'low' ? 'low' : 'medium';
+    } else if (scoreDiff > 20 && missingMonths <= 2 && usageAnalysis.pattern !== 'variable') {
+      confidence = 'high'; // Clear winner with good data
+    }
   }
+  
+  return confidence;
 }
 
