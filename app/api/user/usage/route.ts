@@ -35,14 +35,29 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const validatedData = saveUsageSchema.parse(body);
 
+    // Ensure User record exists in our database
+    let dbUser = await prisma.user.findUnique({
+      where: { email: user.email! },
+    });
+
+    if (!dbUser) {
+      dbUser = await prisma.user.create({
+        data: {
+          email: user.email!,
+          password: '', // Not used with Supabase Auth
+          name: user.user_metadata?.name || null,
+        },
+      });
+    }
+
     // Upsert usage data (replace if exists)
     await prisma.savedUsageData.deleteMany({
-      where: { userId: user.id },
+      where: { userId: dbUser.id },
     });
 
     const savedData = await prisma.savedUsageData.create({
       data: {
-        userId: user.id,
+        userId: dbUser.id,
         monthlyKwh: validatedData.monthlyKwh,
         state: validatedData.state,
       },
@@ -90,8 +105,17 @@ export async function GET() {
       );
     }
 
+    // Find user by email (Prisma uses CUID, Supabase uses UUID)
+    const dbUser = await prisma.user.findUnique({
+      where: { email: user.email! },
+    });
+
+    if (!dbUser) {
+      return NextResponse.json({ data: null });
+    }
+
     const savedData = await prisma.savedUsageData.findFirst({
-      where: { userId: user.id },
+      where: { userId: dbUser.id },
       orderBy: { updatedAt: 'desc' },
     });
 
