@@ -1,22 +1,18 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { getFavoritePlans, removeFavoritePlan } from '@/lib/utils/storage';
+import type { Plan } from '@/types';
 
 export default function FavoritesPage() {
-  const router = useRouter();
-  const [favoritePlanIds, setFavoritePlanIds] = useState<string[]>([]);
-  const [favoritePlans, setFavoritePlans] = useState<any[]>([]);
+  const [favoritePlans, setFavoritePlans] = useState<Plan[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const ids = getFavoritePlans();
-    setFavoritePlanIds(ids);
     
     // Fetch plan details from database
     async function fetchFavoritePlans() {
@@ -30,7 +26,7 @@ export default function FavoritesPage() {
         if (response.ok) {
           const { plans } = await response.json();
           // Filter to only favorite plans
-          const favorites = plans.filter((plan: { id: string }) => ids.includes(plan.id));
+          const favorites = plans.filter((plan: Plan) => ids.includes(plan.id));
           setFavoritePlans(favorites);
         }
       } catch (error) {
@@ -45,7 +41,6 @@ export default function FavoritesPage() {
 
   const handleRemoveFavorite = (planId: string) => {
     removeFavoritePlan(planId);
-    setFavoritePlanIds(getFavoritePlans());
     setFavoritePlans(favorites => favorites.filter(p => p.id !== planId));
   };
 
@@ -82,7 +77,7 @@ export default function FavoritesPage() {
           <Card className="border-slate-200 bg-white text-center p-8">
             <CardTitle className="text-slate-800 mb-2">No Favorites Yet!</CardTitle>
             <p className="text-slate-600 mb-4">
-              You haven't saved any plans as favorites yet. Go to recommendations and click the "☆ Favorite" button on any plan.
+              You haven&apos;t saved any plans as favorites yet. Go to recommendations and click the &quot;☆ Favorite&quot; button on any plan.
             </p>
             <Link href="/recommendations">
               <Button className="bg-blue-600 hover:bg-blue-700">View Recommendations</Button>

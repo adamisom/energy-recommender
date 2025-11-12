@@ -456,7 +456,7 @@ export default function RecommendationsPage() {
                   className="w-4 h-4"
                 />
                 <label htmlFor="hide-viewed" className="text-sm text-slate-700 cursor-pointer">
-                  Hide plans you've clicked View Details on
+                  Hide plans you&apos;ve clicked View Details on
                 </label>
               </div>
               
