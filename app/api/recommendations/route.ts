@@ -123,10 +123,10 @@ export async function POST(request: NextRequest) {
       return { plan: plan as Plan, cost, score };
     });
 
-    // 8. Filter and rank to get top 3
-    const topThree = filterAndRankPlans(scoredPlans, validatedData.preferences);
+    // 8. Filter and rank to get top 5
+    const topFive = filterAndRankPlans(scoredPlans, validatedData.preferences);
 
-    if (topThree.length === 0) {
+    if (topFive.length === 0) {
       return NextResponse.json(
         {
           error: 'No plans match your criteria. Please try relaxing your preferences.',
@@ -137,14 +137,14 @@ export async function POST(request: NextRequest) {
 
     // 9. Generate AI explanations in parallel
     const explanations = await generateAllExplanations(
-      topThree,
+      topFive,
       usageAnalysis,
       validatedData.preferences,
       currentPlanCost
     );
 
     // 10. Build response
-    const recommendations: PlanRecommendation[] = topThree.map((scoredPlan, index) => ({
+    const recommendations: PlanRecommendation[] = topFive.map((scoredPlan, index) => ({
       rank: index + 1,
       plan: scoredPlan.plan,
       projectedAnnualCost: scoredPlan.cost.firstYearTotal,
@@ -157,7 +157,7 @@ export async function POST(request: NextRequest) {
     }));
 
     // Determine confidence level
-    const confidence = determineConfidence(topThree);
+    const confidence = determineConfidence(topFive);
 
     const response: RecommendationResponse = {
       recommendations,
@@ -203,15 +203,15 @@ export async function POST(request: NextRequest) {
  * Determine confidence level based on results
  */
 function determineConfidence(
-  topThree: ScoredPlan[]
+  topFive: ScoredPlan[]
 ): 'high' | 'medium' | 'low' {
-  if (topThree.length < 3) {
+  if (topFive.length < 5) {
     return 'low'; // Not enough plans to choose from
   }
 
   // Check score spread
-  const scores = topThree.map(p => p.score.finalScore);
-  const scoreDiff = scores[0] - scores[2];
+  const scores = topFive.map(p => p.score.finalScore);
+  const scoreDiff = scores[0] - scores[4];
 
   if (scoreDiff > 20) {
     return 'high'; // Clear winner

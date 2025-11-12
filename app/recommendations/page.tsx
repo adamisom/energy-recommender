@@ -1,50 +1,20 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
 import { SignUpModal } from '@/components/shared/sign-up-modal';
-import { safeGetItem, safeClear, STORAGE_KEYS } from '@/lib/utils/storage';
+import { ComparePlansDialog } from '@/components/recommendations/compare-plans-dialog';
+import { safeGetItem, safeClear, STORAGE_KEYS, getViewedPlans, addViewedPlan, getFavoritePlans, addFavoritePlan, removeFavoritePlan, isFavoritePlan } from '@/lib/utils/storage';
 import { useSaveRecommendation } from '@/lib/hooks/use-hybrid-storage';
 import { useAuth } from '@/lib/auth/context';
 import { analyzeUsage } from '@/lib/scoring/usage-analysis';
-
-interface Recommendation {
-  rank: number;
-  plan: {
-    id: string;
-    planName: string;
-    supplierName: string;
-    rateType: string;
-    ratePerKwh: number;
-    monthlyFee: number;
-    contractLengthMonths: number | null;
-    renewablePct: number;
-    supplierRating: number;
-    earlyTerminationFee: number;
-  };
-  projectedAnnualCost: number;
-  annualSavings: number;
-  explanation: string;
-  score: number;
-  breakdown: {
-    finalScore: number;
-  };
-}
-
-interface RecommendationResponse {
-  recommendations: Recommendation[];
-  metadata: {
-    totalAnnualUsageKwh: number;
-    usagePattern: string;
-    currentPlanAnnualCost?: number;
-    generatedAt: string;
-    confidence: string;
-  };
-}
+import { searchRecommendations, filterViewedPlans } from '@/lib/utils/recommendations';
+import { PlanRecommendation, RecommendationResponse } from '@/types';
 
 export default function RecommendationsPage() {
   const router = useRouter();
@@ -55,6 +25,85 @@ export default function RecommendationsPage() {
   const [loadingMessage, setLoadingMessage] = useState('This may take a few seconds');
   const [isShowingSaved, setIsShowingSaved] = useState(false);
   const { saveRecommendation, canSave } = useSaveRecommendation();
+  
+  // Filtering state
+  const [searchQuery, setSearchQuery] = useState('');
+  const [hideViewed, setHideViewed] = useState(false);
+  const [favorites, setFavorites] = useState<string[]>([]);
+  const [selectedForCompare, setSelectedForCompare] = useState<Set<string>>(new Set());
+  const [showCompareDialog, setShowCompareDialog] = useState(false);
+  const [favoriteMessage, setFavoriteMessage] = useState<string | null>(null);
+  
+  // Load favorites on mount
+  useEffect(() => {
+    setFavorites(getFavoritePlans());
+  }, []);
+  
+  // Track viewed plans when clicking "View Details"
+  const handleViewDetails = (planId: string) => {
+    addViewedPlan(planId);
+  };
+  
+  // Handle favorite toggle
+  const handleToggleFavorite = (planId: string) => {
+    if (isFavoritePlan(planId)) {
+      removeFavoritePlan(planId);
+      setFavorites(getFavoritePlans());
+      setFavoriteMessage('Removed from favorites');
+    } else {
+      const result = addFavoritePlan(planId);
+      if (result.success) {
+        setFavorites(getFavoritePlans());
+        setFavoriteMessage('Added to favorites');
+      } else {
+        setFavoriteMessage(result.message || 'Failed to add favorite');
+      }
+    }
+    setTimeout(() => setFavoriteMessage(null), 3000);
+  };
+  
+  // Handle compare selection
+  const handleToggleCompare = (planId: string) => {
+    const newSelected = new Set(selectedForCompare);
+    if (newSelected.has(planId)) {
+      newSelected.delete(planId);
+      setShowCompareDialog(false);
+    } else {
+      if (newSelected.size >= 2) {
+        setFavoriteMessage('You can compare up to 2 plans at a time. Please deselect one first.');
+        setTimeout(() => setFavoriteMessage(null), 3000);
+        return;
+      }
+      newSelected.add(planId);
+      // Auto-open dialog when 2nd plan is selected
+      if (newSelected.size === 2) {
+        setShowCompareDialog(true);
+      }
+    }
+    setSelectedForCompare(newSelected);
+  };
+  
+  // Filter and search recommendations
+  const displayedRecommendations = useMemo(() => {
+    if (!results) return [];
+    
+    let filtered = [...results.recommendations];
+    
+    // Apply search
+    filtered = searchRecommendations(filtered, searchQuery);
+    
+    // Apply hide viewed filter
+    const viewedPlanIds = getViewedPlans();
+    filtered = filterViewedPlans(filtered, viewedPlanIds, hideViewed);
+    
+    return filtered;
+  }, [results, searchQuery, hideViewed]);
+  
+  // Get plans selected for comparison
+  const plansToCompare = useMemo(() => {
+    if (!results) return [];
+    return results.recommendations.filter(rec => selectedForCompare.has(rec.plan.id));
+  }, [results, selectedForCompare]);
 
   useEffect(() => {
     async function fetchRecommendations() {
@@ -74,12 +123,12 @@ export default function RecommendationsPage() {
               const savedRecs = mostRecent.recommendations;
               
               // Check if it's an array (current structure) or has recommendations property (full response)
-              let recommendationsArray: Recommendation[];
+              let recommendationsArray: PlanRecommendation[];
               let metadata: RecommendationResponse['metadata'];
               
               if (Array.isArray(savedRecs)) {
                 // Current structure: recommendations is the array directly
-                recommendationsArray = savedRecs as Recommendation[];
+                recommendationsArray = savedRecs as PlanRecommendation[];
                 
                 // Reconstruct metadata from saved data
                 const monthlyUsageKwh = mostRecent.monthlyUsageKwh as number[];
@@ -369,7 +418,7 @@ export default function RecommendationsPage() {
             className="flex-1 text-base py-6 font-semibold border-2 hover:bg-slate-50"
             size="lg"
           >
-            🔁 Start Over
+            🗑️ Start Over
           </Button>
           {user && (
             <Link href="/recommendations/history">
@@ -384,9 +433,103 @@ export default function RecommendationsPage() {
           )}
         </div>
 
+        {/* Search, Sort, and Filter Controls */}
+        <Card className="mb-6">
+          <CardContent className="pt-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Search */}
+              <div>
+                <Input
+                  type="text"
+                  placeholder="Search plans by name or supplier..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full"
+                />
+              </div>
+              
+              {/* Hide Viewed Toggle */}
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="hide-viewed"
+                  checked={hideViewed}
+                  onChange={(e) => setHideViewed(e.target.checked)}
+                  className="w-4 h-4"
+                />
+                <label htmlFor="hide-viewed" className="text-sm text-slate-700 cursor-pointer">
+                  Hide viewed plans
+                </label>
+                <span className="text-xs text-slate-500">(Plans are marked as viewed when you click "View Details")</span>
+              </div>
+            </div>
+            
+            {/* Favorites Link */}
+            {favorites.length > 0 && (
+              <div className="mt-4">
+                <Link href="/recommendations/favorites">
+                  <Button variant="outline" className="w-full md:w-auto">
+                    ⭐ View My Favorites ({favorites.length})
+                  </Button>
+                </Link>
+              </div>
+            )}
+            
+            {/* Compare Button */}
+            {selectedForCompare.size > 0 && (
+              <div className="mt-4 flex items-center gap-4">
+                <Button
+                  onClick={() => setShowCompareDialog(true)}
+                  className="bg-blue-600 hover:bg-blue-700 text-white"
+                >
+                  📊 Compare {selectedForCompare.size} Plan{selectedForCompare.size > 1 ? 's' : ''}
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setSelectedForCompare(new Set());
+                    setShowCompareDialog(false);
+                  }}
+                  size="sm"
+                >
+                  Clear Selection
+                </Button>
+              </div>
+            )}
+            
+            {/* Favorite Message */}
+            {favoriteMessage && (
+              <div className={`mt-4 p-3 rounded-lg text-sm ${
+                favoriteMessage.includes('You can only') || favoriteMessage.includes('You can compare')
+                  ? 'bg-yellow-50 text-yellow-800 border border-yellow-200'
+                  : 'bg-green-50 text-green-800 border border-green-200'
+              }`}>
+                {favoriteMessage}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
         {/* Recommendations */}
         <div className="space-y-6 mb-8">
-          {results.recommendations.map((rec) => (
+          {displayedRecommendations.length === 0 ? (
+            <Card>
+              <CardContent className="pt-6 text-center text-slate-600">
+                <p>No plans match your search and filter criteria.</p>
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setSearchQuery('');
+                      setHideViewed(false);
+                    }}
+                    className="mt-4"
+                  >
+                    Clear Filters
+                  </Button>
+              </CardContent>
+            </Card>
+          ) : (
+            displayedRecommendations.map((rec) => (
             <Card key={rec.rank} className={rec.rank === 1 ? 'border-2 border-blue-500' : ''}>
               <CardHeader>
                 <div className="flex items-start justify-between">
@@ -468,22 +611,54 @@ export default function RecommendationsPage() {
                 </div>
 
                 {/* Actions */}
-                <div className="flex gap-3 pt-2">
-                  <Link href={`/plan/${rec.plan.id}`} className="flex-1">
-                    <Button variant="outline" className="w-full">
-                      View Details
-                    </Button>
-                  </Link>
+                <div className="space-y-3 pt-2">
+                  <div className="flex gap-3">
+                    <Link href={`/plan/${rec.plan.id}`} className="flex-1" onClick={() => handleViewDetails(rec.plan.id)}>
+                      <Button variant="outline" className="w-full">
+                        View Details
+                      </Button>
+                    </Link>
+                    
+                    <SignUpModal
+                      planName={rec.plan.planName}
+                      supplierName={rec.plan.supplierName}
+                    />
+                  </div>
                   
-                  <SignUpModal
-                    planName={rec.plan.planName}
-                    supplierName={rec.plan.supplierName}
-                  />
+                  <div className="flex gap-2">
+                    {/* Favorite Button */}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleToggleFavorite(rec.plan.id)}
+                      className={isFavoritePlan(rec.plan.id) ? 'bg-yellow-50 border-yellow-300' : ''}
+                    >
+                      {isFavoritePlan(rec.plan.id) ? '⭐ Favorited' : '☆ Favorite'}
+                    </Button>
+                    
+                    {/* Compare Checkbox */}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleToggleCompare(rec.plan.id)}
+                      className={selectedForCompare.has(rec.plan.id) ? 'bg-blue-50 border-blue-300' : ''}
+                    >
+                      {selectedForCompare.has(rec.plan.id) ? '✓ Selected' : 'Compare'}
+                    </Button>
+                  </div>
                 </div>
               </CardContent>
             </Card>
-          ))}
+            ))
+          )}
         </div>
+        
+        {/* Compare Plans Dialog */}
+        <ComparePlansDialog
+          open={showCompareDialog}
+          onOpenChange={setShowCompareDialog}
+          plans={plansToCompare}
+        />
       </div>
     </div>
   );

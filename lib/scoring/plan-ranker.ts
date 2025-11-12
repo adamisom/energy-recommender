@@ -4,7 +4,7 @@ import { ScoredPlan, UserPreferences } from '@/types';
  * Filters and ranks plans based on user preferences and scores
  * @param scoredPlans Array of plans with their scores
  * @param preferences User preferences for filtering
- * @returns Top 3 scored plans that meet criteria
+ * @returns Top 5 scored plans that meet criteria
  */
 export function filterAndRankPlans(
   scoredPlans: ScoredPlan[],
@@ -13,8 +13,8 @@ export function filterAndRankPlans(
   // Apply hard constraints
   let filtered = applyConstraints(scoredPlans, preferences);
 
-  // If we have fewer than 3 plans, relax constraints
-  if (filtered.length < 3) {
+  // If we have fewer than 5 plans, relax constraints
+  if (filtered.length < 5) {
     console.warn(`Only ${filtered.length} plans match strict criteria. Relaxing constraints.`);
     filtered = relaxConstraints(scoredPlans, preferences);
   }
@@ -22,8 +22,8 @@ export function filterAndRankPlans(
   // Sort by final score (descending)
   const sorted = filtered.sort((a, b) => b.score.finalScore - a.score.finalScore);
 
-  // Return top 3
-  return sorted.slice(0, 3);
+  // Return top 5
+  return sorted.slice(0, 5);
 }
 
 /**
@@ -57,7 +57,7 @@ function applyConstraints(
 }
 
 /**
- * Relax constraints to ensure at least 3 recommendations
+ * Relax constraints to ensure at least 5 recommendations
  */
 function relaxConstraints(
   scoredPlans: ScoredPlan[],
@@ -77,7 +77,7 @@ function relaxConstraints(
     return true;
   });
 
-  if (filtered.length >= 3) {
+  if (filtered.length >= 5) {
     return filtered;
   }
 
@@ -89,7 +89,7 @@ function relaxConstraints(
     return true;
   });
 
-  if (filtered.length >= 3) {
+  if (filtered.length >= 5) {
     return filtered;
   }
 
@@ -98,7 +98,7 @@ function relaxConstraints(
     return plan.supplierRating >= Math.max(3.0, preferences.minSupplierRating - 0.5);
   });
 
-  if (filtered.length >= 3) {
+  if (filtered.length >= 5) {
     return filtered;
   }
 

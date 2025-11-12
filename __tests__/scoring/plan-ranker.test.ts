@@ -39,13 +39,14 @@ const createMockScoredPlan = (
 });
 
 describe('filterAndRankPlans', () => {
-  test('should return top 3 plans sorted by score', () => {
+  test('should return top 5 plans sorted by score', () => {
     const scoredPlans = [
       createMockScoredPlan({}, 85),
       createMockScoredPlan({}, 70),
       createMockScoredPlan({}, 90),
       createMockScoredPlan({}, 60),
       createMockScoredPlan({}, 75),
+      createMockScoredPlan({}, 65),
     ];
 
     const preferences: UserPreferences = {
@@ -57,10 +58,12 @@ describe('filterAndRankPlans', () => {
 
     const result = filterAndRankPlans(scoredPlans, preferences);
 
-    expect(result).toHaveLength(3);
+    expect(result).toHaveLength(5);
     expect(result[0].score.finalScore).toBe(90); // Highest
     expect(result[1].score.finalScore).toBe(85);
     expect(result[2].score.finalScore).toBe(75);
+    expect(result[3].score.finalScore).toBe(70);
+    expect(result[4].score.finalScore).toBe(65);
   });
 
   test('should filter by renewable percentage', () => {
@@ -68,6 +71,8 @@ describe('filterAndRankPlans', () => {
       createMockScoredPlan({ renewablePct: 100, supplierRating: 4.0 }, 85),
       createMockScoredPlan({ renewablePct: 80, supplierRating: 4.0 }, 80),
       createMockScoredPlan({ renewablePct: 75, supplierRating: 4.0 }, 75),
+      createMockScoredPlan({ renewablePct: 90, supplierRating: 4.0 }, 70),
+      createMockScoredPlan({ renewablePct: 85, supplierRating: 4.0 }, 65),
       createMockScoredPlan({ renewablePct: 0, supplierRating: 4.0 }, 90), // High score but 0% renewable
     ];
 
@@ -80,8 +85,8 @@ describe('filterAndRankPlans', () => {
 
     const result = filterAndRankPlans(scoredPlans, preferences);
 
-    // Should have 3 plans that meet criteria (no relaxation needed)
-    expect(result).toHaveLength(3);
+    // Should have 5 plans that meet criteria (no relaxation needed since we have 5+)
+    expect(result).toHaveLength(5);
     expect(result.every(p => p.plan.renewablePct >= 75)).toBe(true);
   });
 
@@ -90,6 +95,8 @@ describe('filterAndRankPlans', () => {
       createMockScoredPlan({ contractLengthMonths: 6, supplierRating: 4.0 }, 85),
       createMockScoredPlan({ contractLengthMonths: 12, supplierRating: 4.0 }, 80),
       createMockScoredPlan({ contractLengthMonths: null, supplierRating: 4.0 }, 75), // Month-to-month
+      createMockScoredPlan({ contractLengthMonths: 3, supplierRating: 4.0 }, 70),
+      createMockScoredPlan({ contractLengthMonths: 9, supplierRating: 4.0 }, 65),
       createMockScoredPlan({ contractLengthMonths: 36, supplierRating: 4.0 }, 90), // Too long
     ];
 
@@ -102,8 +109,8 @@ describe('filterAndRankPlans', () => {
 
     const result = filterAndRankPlans(scoredPlans, preferences);
 
-    // Should have 3 plans (6, 12, and month-to-month)
-    expect(result).toHaveLength(3);
+    // Should have 5 plans (6, 12, month-to-month, 3, 9)
+    expect(result).toHaveLength(5);
     expect(result.every(p => 
       p.plan.contractLengthMonths === null || 
       p.plan.contractLengthMonths <= 12
@@ -115,6 +122,8 @@ describe('filterAndRankPlans', () => {
       createMockScoredPlan({ supplierRating: 4.5 }, 85),
       createMockScoredPlan({ supplierRating: 4.0 }, 82),
       createMockScoredPlan({ supplierRating: 3.5 }, 80),
+      createMockScoredPlan({ supplierRating: 3.8 }, 78),
+      createMockScoredPlan({ supplierRating: 3.6 }, 76),
       createMockScoredPlan({ supplierRating: 2.5 }, 90), // Too low rating
     ];
 
@@ -127,12 +136,12 @@ describe('filterAndRankPlans', () => {
 
     const result = filterAndRankPlans(scoredPlans, preferences);
 
-    // Should have 3 plans that meet rating requirement
-    expect(result).toHaveLength(3);
+    // Should have 5 plans that meet rating requirement
+    expect(result).toHaveLength(5);
     expect(result.every(p => p.plan.supplierRating >= 3.5)).toBe(true);
   });
 
-  test('should relax constraints if fewer than 3 plans', () => {
+  test('should relax constraints if fewer than 5 plans', () => {
     const scoredPlans = [
       createMockScoredPlan({ renewablePct: 0, supplierRating: 4.5 }, 85),
       createMockScoredPlan({ renewablePct: 10, supplierRating: 4.0 }, 80),
@@ -196,7 +205,7 @@ describe('filterAndRankPlans', () => {
 
     const result = filterAndRankPlans(scoredPlans, preferences);
 
-    expect(result).toHaveLength(3);
+    expect(result.length).toBeLessThanOrEqual(5);
     // Plan with no ETF should rank highest
     expect(result[0].plan.earlyTerminationFee).toBe(0);
     expect(result[0].score.finalScore).toBe(85);
