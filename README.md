@@ -67,17 +67,39 @@ Comprehensive documentation in `/docs/`:
 - **`DEVELOPER_SETUP.md`** - Complete setup guide with Supabase & API credentials
 - **`DEPLOYMENT_PLAN.md`** - Step-by-step Vercel deployment guide with verification checklist
 - **`MANUAL_TESTING_GUIDE.md`** - Smoke tests and feature testing
-- **`FUTURE_WORK.md`** - Post-MVP enhancements & known limitations (23 items)
 - `Implementation_PRD.md` - Complete implementation guide (3,333 lines)
 - `Architecture.md` - System architecture & data flows
 - `Implementation_Tasks.md` - Step-by-step tasks
 - `PROJECT_STATUS.md` - Current status & metrics
 
+## 🔮 Future Work
+
+### Data & Content
+- **Plan Catalog Expansion** - Expand beyond current 23 plans to 50+ plans across all supported states
+- **Provider Contact Funnel** - Create contact email/form for energy providers to submit their own plan data directly
+
+### Technical Infrastructure
+- **API Pagination** - Add pagination to `/api/plans` endpoint for better performance as catalog grows
+- **Error Monitoring** - Integrate Sentry for production error tracking and alerting
+- **Security Enhancements** - Add CAPTCHA on sign-up, email verification, and password reset flow
+- **Accessibility** - Run Lighthouse audit, add ARIA labels, improve keyboard navigation, and verify color contrast
+
+### Features
+- **Mobile App** - React Native mobile app with push notifications and geolocation-based state detection
+- **Enhanced AI Explanations** - Personalized insights based on usage patterns, "why not this plan?" explanations for lower-ranked options
+- **Usage Pattern Analysis** - Usage trend visualization (12-month chart), peak usage alerts, seasonal pattern detection improvements, cost forecasting, and comparison to similar households
+- **Multi-State Comparison** - "What if I move to [other state]?" analysis for users considering relocation
+
+### Analytics & Business Intelligence
+- **Recommendation Analytics** - Track which plans are recommended most frequently
+- **User Behavior Tracking** - Monitor user flows, drop-off points, and feature usage
+- **A/B Testing Infrastructure** - Framework for testing different recommendation algorithms and UI variations
+
 ## 🎯 Usage Flow
 
 1. **Enter Usage Data** - Manual entry or CSV upload (12 months)
 2. **Set Preferences** - State, priority (cost/renewable/flexibility/balanced), filters
-3. **Get Recommendations** - AI-powered top 3 plans with explanations
+3. **Get Recommendations** - AI-powered top 5 plans with explanations
 4. **View Details** - Complete plan information and cost breakdown
 
 ## 🔐 Authentication
@@ -137,7 +159,7 @@ MIT
 
 ## 🤝 Contributing
 
-This is an MVP implementation. See `docs/FUTURE_WORK.md` for 23 post-MVP enhancements and known limitations.
+This is an MVP implementation. See the [Future Work](#-future-work) section above for post-MVP enhancements.
 
 ---
 
