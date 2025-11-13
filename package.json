@@ -13,7 +13,8 @@
     "plans:export": "tsx scripts/manage-plans.ts export",
     "plans:import": "tsx scripts/manage-plans.ts import",
     "test:recommendations": "tsx scripts/test-recommendations.ts",
-    "test:explanations": "tsx scripts/test-explanations.ts"
+    "test:explanations": "tsx scripts/test-explanations.ts",
+    "postinstall": "prisma generate"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.68.0",
