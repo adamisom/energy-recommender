@@ -59,6 +59,39 @@
 **Highlight:**
 - "These preferences shape your recommendations"
 
+**💡 Pro Tip for Demo - Showing Preference Differentiation:**
+To clearly demonstrate that preferences change recommendations, use these specific settings:
+
+**Test 1: Cost Priority (Cheapest Plans)**
+- Priority: "💰 Lowest Cost"
+- Min renewable: **0%** (allow all plans)
+- Max contract: **36 months** (allow all plans)
+- Min rating: **3.0** (reasonable minimum)
+- **Expected:** Top plan should have lowest rate (e.g., ~$0.0999/kWh)
+
+**Test 2: Renewable Priority (Green Plans)**
+- Priority: "🌱 Most Renewable"
+- Min renewable: **100%** (STRICT - only 100% renewable)
+- Max contract: **36 months**
+- Min rating: **3.0**
+- **Expected:** Top plan should be 100% renewable (may be more expensive)
+
+**Test 3: Flexibility Priority (Short Contracts)**
+- Priority: "🔄 Contract Flexibility"
+- Min renewable: **0%**
+- Max contract: **6 months** (STRICT - only short contracts)
+- Min rating: **3.0**
+- **Expected:** Top plan should be month-to-month or ≤6 months
+
+**Test 4: High Rating Filter (Best Suppliers)**
+- Priority: "⚖️ Balanced"
+- Min renewable: **0%**
+- Max contract: **36 months**
+- Min rating: **4.8** (STRICT - only highly rated)
+- **Expected:** Top plan should have 4.8+ rating
+
+**Key:** Use **strict filters** (100% renewable, 6-month max contract, 4.8+ rating) to see clear differences. Loose filters (0% renewable, 36-month max, 3.0 rating) may show similar results because most plans pass.
+
 ---
 
 ## 3. Get AI-Powered Recommendations (1 minute)
@@ -210,6 +243,60 @@
 **Call to Action:**
 - "Try it yourself at [URL]"
 - "No signup required to get started"
+
+---
+
+## Architecture Overview (Optional - For Technical Audiences)
+
+**When to include:** If demoing to developers, investors interested in technical details, or technical stakeholders
+
+**Duration:** 1-2 minutes
+
+**Dialogue:**
+> "Let me give you a quick overview of how this is built."
+
+**Key Points to Cover:**
+
+1. **Full-Stack Next.js Application**
+   - Single codebase (frontend + backend)
+   - Serverless deployment on Vercel
+   - React Server Components for optimal performance
+
+2. **Data Layer**
+   - Supabase (PostgreSQL) for plan catalog and user data
+   - Prisma ORM for type-safe database access
+   - Hybrid storage: sessionStorage for anonymous users, database for authenticated users
+
+3. **AI Integration**
+   - Anthropic Claude 3.5 Sonnet for personalized explanations
+   - Smart caching (LRU) for performance - explanations cached per plan/context
+   - Fallback to template-based explanations if AI fails
+   - Parallel processing for top 5 plans
+
+4. **Scoring Algorithm**
+   - Multi-dimensional scoring: cost, renewable energy, flexibility, supplier rating, seasonal patterns
+   - User preference weighting (cost vs renewable vs flexibility)
+   - Constraint relaxation when filters are too strict
+
+5. **Performance Optimizations**
+   - Serverless functions for scalability
+   - Explanation caching (1-2 seconds first time, <500ms cached)
+   - Database indexing on state, renewable %, rate, supplier
+   - Rate limiting (10 requests/minute) to prevent abuse
+
+6. **Security & Privacy**
+   - No third-party data sharing
+   - Optional authentication (works fully anonymous)
+   - Environment variables for API keys (never exposed to client)
+   - Input validation with Zod schemas
+
+**Visual Aid (if available):**
+- Show code structure briefly (optional)
+- Point out API routes in `/app/api`
+- Mention test coverage (49 tests)
+
+**Closing:**
+> "Built with modern best practices - type-safe, scalable, and maintainable."
 
 ---
 
