@@ -382,7 +382,7 @@ export default function RecommendationsPage() {
       <div className="max-w-6xl mx-auto">
         {/* CTA Banner for Adding Current Plan */}
         {!hasCurrentPlan && (
-          <Card className="mb-6 border-2 border-blue-500 bg-blue-50">
+          <Card className="mb-2 border-2 border-blue-500 bg-blue-50">
             <CardContent className="pt-1 pb-2">
               <div className="flex flex-col md:flex-row items-center justify-between gap-4">
                 <div className="flex-1">
@@ -403,6 +403,20 @@ export default function RecommendationsPage() {
             </CardContent>
           </Card>
         )}
+
+        {/* Uncertainty Banner */}
+        <UncertaintyBanner 
+          confidence={results.metadata.confidence}
+          reasons={uncertaintyReasons}
+        />
+
+        {/* Disclaimer */}
+        <div className="mb-4 p-4 bg-slate-100 rounded-lg text-sm text-slate-600">
+          <p>
+            <strong>Disclaimer:</strong> These recommendations are based on your provided usage data and preferences. 
+            Actual costs may vary. Please verify all details with the supplier before signing up.
+          </p>
+        </div>
 
         {/* Header */}
         <div className="mb-6 text-center">
@@ -471,20 +485,6 @@ export default function RecommendationsPage() {
             </CardContent>
           </Card>
         )}
-
-        {/* Uncertainty Banner */}
-        <UncertaintyBanner 
-          confidence={results.metadata.confidence}
-          reasons={uncertaintyReasons}
-        />
-
-        {/* Disclaimer */}
-        <div className="mb-3 p-4 bg-slate-100 rounded-lg text-sm text-slate-600">
-          <p>
-            <strong>Disclaimer:</strong> These recommendations are based on your provided usage data and preferences. 
-            Actual costs may vary. Please verify all details with the supplier before signing up.
-          </p>
-        </div>
 
         {/* Actions */}
         <div className="mb-2 flex gap-4">

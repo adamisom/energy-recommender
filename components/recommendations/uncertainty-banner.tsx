@@ -32,7 +32,7 @@ export function UncertaintyBanner({ confidence, reasons = [] }: UncertaintyBanne
   const style = config[confidence];
 
   return (
-    <Card className={`${style.color} border mb-4`}>
+    <Card className={`${style.color} border mb-2`}>
       <CardContent className="py-1.5 px-4">
         <div className="flex items-center gap-3">
           <span className="text-lg" aria-hidden="true">{style.icon}</span>
