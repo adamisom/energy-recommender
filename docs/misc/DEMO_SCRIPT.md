@@ -77,6 +77,14 @@
 - Show cost savings calculations
 - "Each explanation is personalized by Claude 3.5 Sonnet"
 
+**How AI Insight Works:**
+- **Personalized for each plan:** Each of the top 5 plans gets a unique AI-generated explanation
+- **Uses your data:** AI considers your usage pattern (summer peak, winter peak, flat, etc.), annual usage, and preferences
+- **Context-aware:** Explains why THIS plan is ranked #1, #2, etc. based on your priority (cost, renewable, flexibility, or balanced)
+- **Specific numbers:** Mentions actual dollar amounts, percentages, and savings
+- **Fast & cached:** First time takes 1-2 seconds per plan, but explanations are cached for instant results on repeat requests
+- **Fallback protection:** If AI fails, uses smart template-based explanations so you always get insights
+
 ---
 
 ## 4. Search & Filter Features (1 minute)

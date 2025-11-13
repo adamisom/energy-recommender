@@ -383,7 +383,7 @@ export default function RecommendationsPage() {
         {/* CTA Banner for Adding Current Plan */}
         {!hasCurrentPlan && (
           <Card className="mb-6 border-2 border-blue-500 bg-blue-50">
-            <CardContent className="pt-6">
+            <CardContent className="pt-1 pb-2">
               <div className="flex flex-col md:flex-row items-center justify-between gap-4">
                 <div className="flex-1">
                   <h3 className="text-lg font-bold text-blue-900 mb-1">
