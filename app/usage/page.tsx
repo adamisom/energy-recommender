@@ -247,7 +247,7 @@ export default function UsagePage() {
             <DataQualityIndicator monthlyUsage={usageData} />
             
             <Tabs defaultValue="manual" className="w-full">
-              <TabsList className="grid w-full grid-cols-2 mb-6">
+              <TabsList className="!grid !w-full grid-cols-2 mb-6 h-auto">
                 <TabsTrigger value="manual">Manual Entry</TabsTrigger>
                 <TabsTrigger value="csv">Upload CSV</TabsTrigger>
               </TabsList>
